@@ -6,20 +6,18 @@
   "homepage": "https://github.com/farijarifriyanto-debug/BotConnector-CLI",
   "repository": {
     "type": "git",
-    "url": "https://github.com/farijarifriyanto-debug/BotConnector-CLI.git"
+    "url": "git+https://github.com/farijarifriyanto-debug/BotConnector-CLI.git"
   },
   "bin": {
-    "botconnector": "./bin/botconnector.js"
+    "botconnector": "bin/botconnector.js"
   },
-  "files": [
-    "bin/",
-    "scripts/postinstall.js"
-  ],
-  "scripts": {
-    "postinstall": "node ./scripts/postinstall.js"
-  },
+  "files": ["bin/"],
   "os": ["win32", "linux"],
   "engines": {
     "node": ">=18"
+  },
+  "optionalDependencies": {
+    "botconnector-cli-win32-x64": "0.1.0",
+    "botconnector-cli-linux-x64": "0.1.0"
   }
 }
