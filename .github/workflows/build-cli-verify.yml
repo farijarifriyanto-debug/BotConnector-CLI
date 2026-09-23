@@ -17,8 +17,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+
       - name: Setup Bun
-        uses: ./.github/actions/setup-bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      # Deliberately using the DEFAULT (isolated) linker here, not --linker hoisted.
+      # The repo's own setup-bun composite action forces --linker hoisted on Windows
+      # as a workaround for a different, unrelated issue (patched peer variants —
+      # see https://github.com/oven-sh/bun/issues/28147), but that hoisted layout
+      # breaks resolution of @opentui/*'s subpath "exports" during the compile step
+      # on Windows. The isolated linker (Bun's default) resolves them correctly.
+      - name: Install dependencies (default linker)
+        run: bun install
 
       - name: Build botconnector CLI (single target, skip web UI embed)
         run: bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
@@ -27,9 +43,9 @@ jobs:
         run: |
           set -e
           if [ "$RUNNER_OS" = "Windows" ]; then
-            BIN=$(find packages/opencode/dist -maxdepth 2 -iname 'botconnector.exe' | head -1)
+            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
           else
-            BIN=$(find packages/opencode/dist -maxdepth 2 -iname 'botconnector' -type f | head -1)
+            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
           fi
           echo "Found binary: $BIN"
           test -n "$BIN"
