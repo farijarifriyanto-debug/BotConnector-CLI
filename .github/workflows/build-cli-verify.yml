@@ -1,0 +1,38 @@
+name: build-cli-verify
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Build botconnector CLI (single target, skip web UI embed)
+        run: bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
+
+      - name: Find and run the compiled binary
+        run: |
+          set -e
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            BIN=$(find packages/opencode/dist -maxdepth 2 -iname 'botconnector.exe' | head -1)
+          else
+            BIN=$(find packages/opencode/dist -maxdepth 2 -iname 'botconnector' -type f | head -1)
+          fi
+          echo "Found binary: $BIN"
+          test -n "$BIN"
+          chmod +x "$BIN" || true
+          "$BIN" --version
+          "$BIN" --help
