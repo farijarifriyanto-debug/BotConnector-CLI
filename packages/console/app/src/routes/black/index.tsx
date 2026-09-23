@@ -1,121 +1,31 @@
-import { A, createAsync, query, useSearchParams } from "@solidjs/router"
+import { A } from "@solidjs/router"
 import { Title } from "@solidjs/meta"
-import { createMemo, createSignal, For, Match, onMount, Show, Switch } from "solid-js"
-import { PlanIcon, plans } from "./common"
-import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
-import { Resource } from "@opencode-ai/console-resource"
 
-const getPaused = query(async () => {
-  "use server"
-  return Resource.App.stage === "production"
-}, "black.paused")
-
+// BotConnector does not currently offer a paid "Black" subscription, or any
+// paid subscription of its own (see https://botconnector.id/pricing). Local
+// models are free; cloud routing is bring-your-own-API-key with no
+// BotConnector markup. This route previously rendered opencode's real Black
+// plan-selection UI (the $20/$100/$200 tiers and icons defined in
+// ./common.tsx, plus a Stripe-stage-gated "paused" state); that UI is
+// replaced with an honest static notice. ./common.tsx is left untouched and
+// unused, same as the underlying billing.ts/Stripe integration, so this is
+// reversible if BotConnector ever introduces its own paid plans.
 export default function Black() {
-  const [params] = useSearchParams()
-  const i18n = useI18n()
   const language = useLanguage()
-  const paused = createAsync(() => getPaused())
-  const [selected, setSelected] = createSignal<string | null>((params.plan as string) || null)
-  const [mounted, setMounted] = createSignal(false)
-  const selectedPlan = createMemo(() => plans.find((p) => p.id === selected()))
-
-  onMount(() => {
-    requestAnimationFrame(() => setMounted(true))
-  })
-
-  const transition = (action: () => void) => {
-    if (mounted() && "startViewTransition" in document) {
-      ;(document as any).startViewTransition(action)
-      return
-    }
-
-    action()
-  }
-
-  const select = (planId: string) => {
-    if (selected() === planId) {
-      return
-    }
-
-    transition(() => setSelected(planId))
-  }
-
-  const cancel = () => {
-    transition(() => setSelected(null))
-  }
-
   return (
     <>
-      <Title>{i18n.t("black.title")}</Title>
+      <Title>Black</Title>
       <section data-slot="cta">
-        <Show when={!paused()} fallback={<p data-slot="paused">{i18n.t("black.paused")}</p>}>
-          <Switch>
-            <Match when={!selected()}>
-              <div data-slot="pricing">
-                <For each={plans}>
-                  {(plan) => (
-                    <button
-                      type="button"
-                      onClick={() => select(plan.id)}
-                      data-slot="pricing-card"
-                      style={{ "view-transition-name": `card-${plan.id}` }}
-                    >
-                      <div data-slot="icon">
-                        <PlanIcon plan={plan.id} />
-                      </div>
-                      <p data-slot="price">
-                        <span data-slot="amount">${plan.id}</span>{" "}
-                        <span data-slot="period">{i18n.t("black.price.perMonth")}</span>
-                        <Show when={plan.multiplier}>
-                          {(multiplier) => <span data-slot="multiplier">{i18n.t(multiplier())}</span>}
-                        </Show>
-                      </p>
-                    </button>
-                  )}
-                </For>
-              </div>
-            </Match>
-            <Match when={selectedPlan()}>
-              {(plan) => (
-                <div data-slot="selected-plan">
-                  <div data-slot="selected-card" style={{ "view-transition-name": `card-${plan().id}` }}>
-                    <div data-slot="icon">
-                      <PlanIcon plan={plan().id} />
-                    </div>
-                    <p data-slot="price">
-                      <span data-slot="amount">${plan().id}</span>{" "}
-                      <span data-slot="period">{i18n.t("black.price.perPersonBilledMonthly")}</span>
-                      <Show when={plan().multiplier}>
-                        {(multiplier) => <span data-slot="multiplier">{i18n.t(multiplier())}</span>}
-                      </Show>
-                    </p>
-                    <ul data-slot="terms" style={{ "view-transition-name": `terms-${plan().id}` }}>
-                      <li>{i18n.t("black.terms.1")}</li>
-                      <li>{i18n.t("black.terms.2")}</li>
-                      <li>{i18n.t("black.terms.3")}</li>
-                      <li>{i18n.t("black.terms.4")}</li>
-                      <li>{i18n.t("black.terms.5")}</li>
-                      <li>{i18n.t("black.terms.6")}</li>
-                      <li>{i18n.t("black.terms.7")}</li>
-                    </ul>
-                    <div data-slot="actions" style={{ "view-transition-name": `actions-${plan().id}` }}>
-                      <button type="button" onClick={() => cancel()} data-slot="cancel">
-                        {i18n.t("common.cancel")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Match>
-          </Switch>
-        </Show>
-        <Show when={!paused()}>
-          <p data-slot="fine-print" style={{ "view-transition-name": "fine-print" }}>
-            {i18n.t("black.finePrint.beforeTerms")} ·{" "}
-            <A href={language.route("/legal/terms-of-service")}>{i18n.t("black.finePrint.terms")}</A>
-          </p>
-        </Show>
+        <p data-slot="paused">
+          BotConnector has no paid subscriptions, payment processing, or active billing today. Local models are free
+          -- you cover your own hardware. Cloud routing uses your own provider API keys, billed directly by that
+          provider at their standard rates; BotConnector adds no markup. If BotConnector introduces paid services in
+          the future, pricing will be published before anything is charged.
+        </p>
+        <p data-slot="fine-print">
+          <A href={language.route("/legal/terms-of-service")}>Terms of Service</A>
+        </p>
       </section>
     </>
   )

@@ -1,16 +1,22 @@
-import { A, createAsync, useNavigate } from "@solidjs/router"
+import { A, createAsync } from "@solidjs/router"
 import "./workspace.css"
 import { Title } from "@solidjs/meta"
 import { github } from "~/lib/github"
-import { createEffect, createMemo, For, onMount } from "solid-js"
+import { createMemo } from "solid-js"
 import { config } from "~/config"
-import { createList } from "solid-list"
 import { useLanguage } from "~/context/language"
 import { LanguagePicker } from "~/component/language-picker"
 import { useI18n } from "~/context/i18n"
 
+// BotConnector does not currently offer a paid "Black" subscription (see
+// https://botconnector.id/pricing). This route previously let a signed-in
+// user pick which workspace to subscribe to Black; since there is no Black
+// plan to subscribe to, the workspace picker below is replaced with an
+// honest static notice. (Its target route, /black/workspace/:id, does not
+// exist elsewhere in this codebase either -- the picker was already a dead
+// end before this change.) Page chrome (header logo, hero art, footer) is
+// unrelated to billing and is left as-is.
 export default function BlackWorkspace() {
-  const navigate = useNavigate()
   const language = useLanguage()
   const i18n = useI18n()
   const githubData = createAsync(() => github())
@@ -22,40 +28,6 @@ export default function BlackWorkspace() {
         }).format(githubData()!.stars!)
       : config.github.starsFormatted.compact,
   )
-
-  // TODO: Frank, replace with real workspaces
-  const workspaces = [
-    { id: "wrk_123", n: 1 },
-    { id: "wrk_456", n: 2 },
-    { id: "wrk_789", n: 3 },
-    { id: "wrk_111", n: 4 },
-    { id: "wrk_222", n: 5 },
-    { id: "wrk_333", n: 6 },
-    { id: "wrk_444", n: 7 },
-    { id: "wrk_555", n: 8 },
-  ].map((workspace) => ({
-    ...workspace,
-    name: i18n.t("black.workspace.name", { n: workspace.n }),
-  }))
-
-  let listRef: HTMLUListElement | undefined
-
-  const { active, setActive, onKeyDown } = createList({
-    items: () => workspaces.map((w) => w.id),
-    initialActive: workspaces[0]?.id ?? null,
-    handleTab: true,
-  })
-
-  onMount(() => {
-    listRef?.focus()
-  })
-
-  createEffect(() => {
-    const id = active()
-    if (!id || !listRef) return
-    const el = listRef.querySelector(`[data-id="${id}"]`)
-    el?.scrollIntoView({ block: "nearest" })
-  })
 
   return (
     <div data-page="black">
@@ -179,37 +151,12 @@ export default function BlackWorkspace() {
           </svg>
         </div>
         <section data-slot="select-workspace">
-          <p data-slot="select-workspace-title">{i18n.t("black.workspace.selectPlan")}</p>
-          <ul
-            ref={listRef}
-            data-slot="workspaces"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && active()) {
-                navigate(`/black/workspace/${active()}`)
-              } else if (e.key === "Tab") {
-                e.preventDefault()
-                onKeyDown(e)
-              } else {
-                onKeyDown(e)
-              }
-            }}
-          >
-            <For each={workspaces}>
-              {(workspace) => (
-                <li
-                  data-slot="workspace"
-                  data-id={workspace.id}
-                  data-active={active() === workspace.id}
-                  onMouseEnter={() => setActive(workspace.id)}
-                  onClick={() => navigate(`/black/workspace/${workspace.id}`)}
-                >
-                  <span data-slot="selected-icon">[*]</span>
-                  <a href={`/black/workspace/${workspace.id}`}>{workspace.name}</a>
-                </li>
-              )}
-            </For>
-          </ul>
+          <p data-slot="select-workspace-title">
+            BotConnector has no paid subscriptions, payment processing, or active billing today. Local models are
+            free -- you cover your own hardware. Cloud routing uses your own provider API keys, billed directly by
+            that provider at their standard rates; BotConnector adds no markup. If BotConnector introduces paid
+            services in the future, pricing will be published before anything is charged.
+          </p>
         </section>
       </main>
       <footer data-component="footer">
