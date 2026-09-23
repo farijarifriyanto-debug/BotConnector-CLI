@@ -1,0 +1,23 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--padding, var(--space-4));
+  max-width: 40rem;
+
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-xl);
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+  }
+
+  a {
+    color: var(--color-text-strong);
+  }
+}
