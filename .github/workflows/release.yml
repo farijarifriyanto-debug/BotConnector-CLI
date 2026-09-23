@@ -1,0 +1,105 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.1.0, no leading v)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset_name: botconnector-windows-x64
+            bin_glob: "botconnector.exe"
+            archive_ext: zip
+          - os: ubuntu-latest
+            asset_name: botconnector-linux-x64
+            bin_glob: "botconnector"
+            archive_ext: tar.gz
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      # Default (isolated) linker -- see build-cli-verify.yml for why the
+      # repo's own --linker hoisted workaround breaks @opentui/* resolution
+      # on Windows during the compile step.
+      - name: Install dependencies (default linker)
+        run: bun install
+
+      - name: Build botconnector CLI (single target, skip web UI embed)
+        env:
+          OPENCODE_VERSION: ${{ inputs.version }}
+        run: bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
+
+      - name: Package binary
+        run: |
+          set -e
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
+          else
+            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+          fi
+          test -n "$BIN"
+          chmod +x "$BIN" || true
+          "$BIN" --version
+          mkdir -p out
+          cp "$BIN" "out/${{ matrix.bin_glob }}"
+          if [ "${{ matrix.archive_ext }}" = "zip" ]; then
+            (cd out && 7z a "../${{ matrix.asset_name }}.zip" "${{ matrix.bin_glob }}")
+          else
+            (cd out && tar -czf "../${{ matrix.asset_name }}.tar.gz" "${{ matrix.bin_glob }}")
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}.*
+          if-no-files-found: error
+
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: dist
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          FILES=$(find dist -type f \( -name '*.zip' -o -name '*.tar.gz' \))
+          gh release create "v${{ inputs.version }}" \
+            --repo "${{ github.repository }}" \
+            --title "BotConnector CLI v${{ inputs.version }}" \
+            --notes "Unsigned build. Windows: SmartScreen will warn on first run (click More info -> Run anyway) since this isn't code-signed yet." \
+            $FILES
