@@ -52,3 +52,13 @@ jobs:
           chmod +x "$BIN" || true
           "$BIN" --version
           "$BIN" --help
+          mkdir -p artifact-out
+          cp "$BIN" artifact-out/
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: botconnector-cli-${{ matrix.os }}
+          path: artifact-out/*
+          if-no-files-found: error
+          retention-days: 7
