@@ -1,10 +1,10 @@
 {
   "provider": {
-    "botconnector-cloud": {
+    "botconnector": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "BotConnector Cloud",
       "options": {
-        "baseURL": "https://gateway.botconnector.id/v1",
+        "baseURL": "https://api.botconnector.id/v1",
         "apiKey": "{env:BOTCONNECTOR_API_KEY}"
       },
       "models": {
@@ -12,18 +12,22 @@
         "glm-5.3-flash": { "name": "GLM 5.3 Flash" },
         "glm-5.2": { "name": "GLM 5.2" },
         "minimax-m3": { "name": "MiniMax M3" },
+        "minimax-m3-free": { "name": "MiniMax M3 Free" },
         "qwen3.5-397b-a17b": { "name": "Qwen 3.5 397B A17B" },
         "kimi-k3": { "name": "Kimi K3" },
         "qwen3.8-flash": { "name": "Qwen 3.8 Flash" },
         "gpt-5.6-luna": { "name": "GPT 5.6 Luna" },
         "gpt-5.6-terra": { "name": "GPT 5.6 Terra" },
         "gpt-5.6-sol": { "name": "GPT 5.6 Sol" },
-        "qwen3.7-flash-free": { "name": "Qwen 3.7 Flash (Free)" },
-        "minimax-m3-free": { "name": "MiniMax M3 (Free)" },
-        "mistral-medium-3.5-free": { "name": "Mistral Medium 3.5 (Free)" },
-        "qwen3-coder-plus-free": { "name": "Qwen 3 Coder Plus (Free)" },
-        "qwen3.8-omni-flash-free": { "name": "Qwen 3.8 Omni Flash (Free)" },
-        "agnes-3.0-flash": { "name": "Agnes 3.0 Flash" }
+        "qwen3.7-flash-free": { "name": "Qwen 3.7 Flash Free" },
+        "mistral-medium-3.5-free": { "name": "Mistral Medium 3.5 Free" },
+        "qwen3-coder-plus-free": { "name": "Qwen3 Coder Plus Free" },
+        "qwen3.8-omni-flash-free": { "name": "Qwen 3.8 Omni Flash Free" },
+        "agnes-3.0-flash": { "name": "Agnes 3.0 Flash" },
+        "ling-3.0-flash": { "name": "Ling 3.0 Flash" },
+        "ling-3.0-flash-fin": { "name": "Ling 3.0 Flash Fin" },
+        "ling-3.0-flash-sante": { "name": "Ling 3.0 Flash Sante" },
+        "ling-3.0-flash-vl": { "name": "Ling 3.0 Flash VL" }
       }
     }
   }
