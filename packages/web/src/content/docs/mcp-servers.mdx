@@ -25,9 +25,8 @@ Certain MCP servers, like the GitHub MCP server, tend to add a lot of tokens and
 
 You can define MCP servers in your [BotConnector Config](https://opencode.ai/docs/config/) under `mcp`. Add each MCP with a unique name. You can refer to that MCP by name when prompting the LLM.
 
-```jsonc title="opencode.jsonc" {6}
+```jsonc title="botconnector.jsonc" {6}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "name-of-mcp-server": {
       // ...
@@ -50,9 +49,8 @@ Organizations can provide default MCP servers via their `.well-known/opencode` e
 
 To enable a specific server from your organization's remote config, add it to your local config with `enabled: true`:
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "jira": {
       "type": "remote",
@@ -71,9 +69,8 @@ Your local config values override the remote defaults. See [config precedence](/
 
 Add local MCP servers using `type` to `"local"` within the MCP object.
 
-```jsonc title="opencode.jsonc" {15}
+```jsonc title="botconnector.jsonc" {15}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-local-mcp-server": {
       "type": "local",
@@ -92,9 +89,8 @@ The command is how the local MCP server is started. You can also pass in a list 
 
 For example, here's how you can add the test [`@modelcontextprotocol/server-everything`](https://www.npmjs.com/package/@modelcontextprotocol/server-everything) MCP server.
 
-```jsonc title="opencode.jsonc"
+```jsonc title="botconnector.jsonc"
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "mcp_everything": {
       "type": "local",
@@ -131,9 +127,8 @@ Here are all the options for configuring a local MCP server.
 
 Add remote MCP servers by setting `type` to `"remote"`.
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-remote-mcp": {
       "type": "remote",
@@ -178,9 +173,8 @@ BotConnector automatically handles OAuth authentication for remote MCP servers. 
 
 For most OAuth-enabled MCP servers, no special configuration is needed. Just configure the remote server:
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-oauth-server": {
       "type": "remote",
@@ -198,9 +192,8 @@ If the server requires authentication, BotConnector will prompt you to authentic
 
 If you have client credentials from the MCP server provider, you can configure them:
 
-```json title="opencode.json" {7-11}
+```json title="botconnector.json" {7-11}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-oauth-server": {
       "type": "remote",
@@ -247,9 +240,8 @@ The `mcp auth` command will open your browser for authorization. After you autho
 
 If you want to disable automatic OAuth for a server (e.g., for servers that use API keys instead), set `oauth` to `false`:
 
-```json title="opencode.json" {7}
+```json title="botconnector.json" {7}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-api-key-server": {
       "type": "remote",
@@ -300,9 +292,8 @@ Your MCPs are available as tools in BotConnector, alongside built-in tools. So y
 
 This means that you can enable or disable them globally.
 
-```json title="opencode.json" {14}
+```json title="botconnector.json" {14}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-mcp-foo": {
       "type": "local",
@@ -321,9 +312,8 @@ This means that you can enable or disable them globally.
 
 We can also use a glob pattern to disable all matching MCPs.
 
-```json title="opencode.json" {14}
+```json title="botconnector.json" {14}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-mcp-foo": {
       "type": "local",
@@ -351,9 +341,8 @@ If you have a large number of MCP servers you may want to only enable them per a
 1. Disable it as a tool globally.
 2. In your [agent config](/docs/agents#tools), enable the MCP server as a tool.
 
-```json title="opencode.json" {11, 14-18}
+```json title="botconnector.json" {11, 14-18}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "my-mcp": {
       "type": "local",
@@ -405,9 +394,8 @@ Below are examples of some common MCP servers. You can submit a PR if you want t
 
 Add the [Sentry MCP server](https://mcp.sentry.dev) to interact with your Sentry projects and issues.
 
-```json title="opencode.json" {4-8}
+```json title="botconnector.json" {4-8}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "sentry": {
       "type": "remote",
@@ -438,9 +426,8 @@ Show me the latest unresolved issues in my project. use sentry
 
 Add the [Context7 MCP server](https://github.com/upstash/context7) to search through docs.
 
-```json title="opencode.json" {4-7}
+```json title="botconnector.json" {4-7}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "context7": {
       "type": "remote",
@@ -452,9 +439,8 @@ Add the [Context7 MCP server](https://github.com/upstash/context7) to search thr
 
 If you have signed up for a free account, you can use your API key and get higher rate-limits.
 
-```json title="opencode.json" {7-9}
+```json title="botconnector.json" {7-9}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "context7": {
       "type": "remote",
@@ -487,9 +473,8 @@ When you need to search docs, use `context7` tools.
 
 Add the [Grep by Vercel](https://grep.app) MCP server to search through code snippets on GitHub.
 
-```json title="opencode.json" {4-7}
+```json title="botconnector.json" {4-7}
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "gh_grep": {
       "type": "remote",

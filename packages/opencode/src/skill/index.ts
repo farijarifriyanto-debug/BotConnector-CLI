@@ -24,14 +24,14 @@ const EXTERNAL_SKILL_PATTERN = "skills/**/SKILL.md"
 const BOTCONNECTOR_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
 const SKILL_PATTERN = "**/SKILL.md"
 
-// Built-in skill that ships with opencode. The model's intuition for what an
-// opencode.json should look like is often wrong, and opencode hard-fails on
+// Built-in skill that ships with BotConnector. The model's intuition for what an
+// botconnector.json should look like is often wrong, and BotConnector hard-fails on
 // invalid config, so users hit cryptic startup errors. Loading this skill
-// when the model is asked to touch opencode's own config files gives it the
+// when the model is asked to touch BotConnector's own config files gives it the
 // actual schemas instead of guesses.
 const CUSTOMIZE_BOTCONNECTOR_SKILL_NAME = "customize-botconnector"
 const CUSTOMIZE_BOTCONNECTOR_SKILL_DESCRIPTION =
-  "Use ONLY when the user is editing or creating BotConnector's own configuration: botconnector.json, botconnector.jsonc, files under .botconnector/, or files under ~/.config/botconnector/. Also use when creating or fixing opencode agents, subagents, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring BotConnector itself."
+  "Use ONLY when the user is editing or creating BotConnector's own configuration: botconnector.json, botconnector.jsonc, files under .botconnector/, or files under ~/.config/botconnector/. Also use when creating or fixing BotConnector agents, subagents, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring BotConnector itself."
 const CUSTOMIZE_BOTCONNECTOR_SKILL_BODY = SkillPlugin.CustomizeBotConnectorContent
 
 export const Info = Schema.Struct({

@@ -11,21 +11,11 @@ BotConnector validates its own config strictly and refuses to start when a field
 is wrong. The shapes below cover the common surface area, but they are a
 **summary, not the source of truth**.
 
-## Full schema reference
+## Config validation
 
-The authoritative list of every config option — with field types, enums,
-defaults, and descriptions — lives in the published JSON Schema:
-
-**<https://opencode.ai/config.json>**
-
-If a field is not documented in this skill, or you need to confirm an exact
-shape before writing config, **fetch that URL and read the schema directly**
-rather than guessing. opencode hard-fails on invalid config, so the cost of a
-wrong shape is a broken startup.
-
-Independently, every `botconnector.json` should declare
-`"$schema": "https://opencode.ai/config.json"` so the user's editor catches
-mistakes as they type.
+BotConnector validates botconnector.json and botconnector.jsonc with its bundled runtime schema.
+Do not rename these files to opencode.json and do not place BotConnector config under .opencode/.
+The OpenCode schema URL is an upstream implementation detail, not the BotConnector config namespace.
 
 ## Applying changes
 
@@ -39,7 +29,7 @@ already-loaded config until then.
 
 | Scope                         | Path                                                                                                                      |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Project config                | `./botconnector.json`, `./botconnector.jsonc`, or `.botconnector/botconnector.json` (opencode walks up from the cwd to the worktree root) |
+| Project config                | `./botconnector.json`, `./botconnector.jsonc`, or `.botconnector/botconnector.json` (BotConnector walks up from the cwd to the worktree root) |
 | Global config                 | `~/.config/botconnector/botconnector.json` or `~/.config/botconnector/botconnector.jsonc` (NOT `~/.botconnector/`)                            |
 | Project agents                | `.botconnector/agent/<name>.md` or `.botconnector/agents/<name>.md`                                                               |
 | Global agents                 | `~/.config/botconnector/agent(s)/<name>.md`                                                                                   |
@@ -58,8 +48,7 @@ Every field is optional.
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
-  "username": "string",
+    "username": "string",
   "model": "provider/model-id",
   "small_model": "provider/model-id",
   "default_agent": "agent-name",
@@ -282,7 +271,7 @@ same key in `agent: { <name>: { ... } }`.
 
 ## Commands
 
-opencode's command loader scans for `**/*.md` inside command directories. The
+BotConnector's command loader scans for `**/*.md` inside command directories. The
 file is named after the command, and lives directly inside the `command` folder:
 
 ```
@@ -427,23 +416,17 @@ the `plan` agent's permission ruleset (`edit: deny *`).
 When a user's config is broken and BotConnector won't start, these env vars help:
 
 - `BOTCONNECTOR_DISABLE_PROJECT_CONFIG=1`: skip the project's local `botconnector.json`
-  and start from globals only. Run from the project directory, opencode loads,
+  and start from globals only. Run from the project directory, BotConnector loads,
   the user edits the broken file, then they restart without the flag.
 - `BOTCONNECTOR_CONFIG=/path/to/file.json`: load an additional explicit config.
-- `BOTCONNECTOR_CONFIG_CONTENT='{"$schema":"https://opencode.ai/config.json"}'`:
+- `BOTCONNECTOR_CONFIG_CONTENT='{"model":"provider/model-id"}'`:
   inject inline JSON as a final local-scope merge.
-- `BOTCONNECTOR_DISABLE_DEFAULT_PLUGINS=1`: skip default plugins.
-- `BOTCONNECTOR_PURE=1`: skip external plugins entirely.
-- `BOTCONNECTOR_DISABLE_EXTERNAL_SKILLS=1`,
-  `BOTCONNECTOR_DISABLE_CLAUDE_CODE_SKILLS=1`: skip the external skill scans under
-  `~/.claude/` and `~/.agents/`.
 
 ## When proposing edits
 
-- Validate against the schema before writing. If you are unsure of a field's
-  exact shape, or the field is not covered in this skill, fetch
-  `https://opencode.ai/config.json` and read the schema rather than guessing.
-- Preserve `$schema` and any existing fields the user did not ask to change.
+- Validate against BotConnector's bundled runtime schema and this skill before writing.
+- Do not add an OpenCode schema URL to BotConnector config.
+- Preserve existing fields the user did not ask to change.
 - For agent, command, skill, and plugin definitions, prefer creating new files
   in the correct location over inlining everything in `botconnector.json`.
 - If the user's existing config is malformed, point them at the env-var escape

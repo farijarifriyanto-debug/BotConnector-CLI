@@ -18,8 +18,6 @@ export const Flag = {
 
   OPENCODE_AUTO_HEAP_SNAPSHOT: truthy("OPENCODE_AUTO_HEAP_SNAPSHOT"),
   OPENCODE_GIT_BASH_PATH: process.env["OPENCODE_GIT_BASH_PATH"],
-  OPENCODE_CONFIG: process.env["OPENCODE_CONFIG"],
-  OPENCODE_CONFIG_CONTENT: process.env["OPENCODE_CONFIG_CONTENT"],
 
   // BotConnector-owned config namespace. Never consume another app config by accident.
   BOTCONNECTOR_CONFIG: process.env["BOTCONNECTOR_CONFIG"],
@@ -55,17 +53,11 @@ export const Flag = {
 
   // Evaluated at access time (not module load) because tests, the CLI, and
   // external tooling set these env vars at runtime.
-  get OPENCODE_DISABLE_PROJECT_CONFIG() {
-    return truthy("OPENCODE_DISABLE_PROJECT_CONFIG")
-  },
   get OPENCODE_EXPERIMENTAL_REFERENCES() {
     return enabledByExperimental("OPENCODE_EXPERIMENTAL_REFERENCES")
   },
   get OPENCODE_TUI_CONFIG() {
     return process.env["OPENCODE_TUI_CONFIG"]
-  },
-  get OPENCODE_CONFIG_DIR() {
-    return process.env["OPENCODE_CONFIG_DIR"]
   },
   get BOTCONNECTOR_CONFIG_DIR() {
     return process.env["BOTCONNECTOR_CONFIG_DIR"]
