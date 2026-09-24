@@ -1,6 +1,6 @@
 {
   "name": "botconnector-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "BotConnector CLI/TUI -- a local-first AI agent for the terminal, built on opencode.",
   "license": "MIT",
   "homepage": "https://github.com/farijarifriyanto-debug/BotConnector-CLI",
@@ -11,7 +11,7 @@
   "bin": {
     "botconnector": "bin/botconnector.js"
   },
-  "files": ["bin/"],
+  "files": ["bin/", "default-config/"],
   "os": ["win32", "linux"],
   "engines": {
     "node": ">=18"

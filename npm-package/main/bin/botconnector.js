@@ -5,12 +5,33 @@
 // in node_modules. If neither installed (unsupported platform, or npm
 // skipped optional deps), we say so clearly instead of failing silently.
 
+const fs = require("fs")
+const os = require("os")
 const path = require("path")
 const { spawnSync } = require("child_process")
 
 const PLATFORM_PACKAGES = {
   win32: { pkg: "botconnector-cli-win32-x64", binName: "botconnector.exe" },
   linux: { pkg: "botconnector-cli-linux-x64", binName: "botconnector" },
+}
+
+// Seed the "BotConnector Cloud" provider config on first run. opencode has
+// no concept of a package-bundled default config -- everything comes from
+// ~/.config/opencode/*.jsonc -- so this copies our bundled file there once
+// if it doesn't already exist. Never overwrites a file the user may have
+// edited, and never fails the CLI launch if this can't be done.
+function seedDefaultConfig() {
+  try {
+    const configDir = path.join(os.homedir(), ".config", "opencode")
+    const dest = path.join(configDir, "botconnector-cloud.jsonc")
+    if (fs.existsSync(dest)) return
+    const src = path.join(__dirname, "..", "default-config", "botconnector-cloud.jsonc")
+    if (!fs.existsSync(src)) return
+    fs.mkdirSync(configDir, { recursive: true })
+    fs.copyFileSync(src, dest)
+  } catch {
+    // best-effort only
+  }
 }
 
 function resolveBinary() {
@@ -33,6 +54,8 @@ function resolveBinary() {
     process.exit(1)
   }
 }
+
+seedDefaultConfig()
 
 const binPath = resolveBinary()
 const result = spawnSync(binPath, process.argv.slice(2), { stdio: "inherit" })
