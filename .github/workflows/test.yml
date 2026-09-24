@@ -49,6 +49,13 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
+      - name: Preinstall ripgrep on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ripgrep -y --no-progress
+          rg --version
+
       - name: Configure git identity
         run: |
           git config --global user.email "bot@opencode.ai"
