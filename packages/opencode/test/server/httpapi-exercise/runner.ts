@@ -153,8 +153,8 @@ function withContext<A, E>(
                 time: { created: Date.now() },
                 agent: "build",
                 model: {
-                  providerID: ProviderV2.ID.opencode,
-                  modelID: ModelV2.ID.make("test"),
+                  providerID: ProviderV2.ID.make("test"),
+                  modelID: ModelV2.ID.make("test-model"),
                 },
               }
               const part: SessionV1.TextPart = {
