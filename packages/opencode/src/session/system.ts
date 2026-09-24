@@ -19,6 +19,23 @@ export function provider(_model: Provider.Model) {
   return [PROMPT_DEFAULT]
 }
 
+export function orderContext(input: {
+  providerID: string
+  env: string[]
+  instructions: string[]
+  mcpInstructions?: string
+  skills?: string
+}) {
+  const mcp = input.mcpInstructions ? [input.mcpInstructions] : []
+  const skills = input.skills ? [input.skills] : []
+
+  if (input.providerID.toLowerCase().startsWith("botconnector")) {
+    return [...skills, ...mcp, ...input.instructions, ...input.env]
+  }
+
+  return [...input.env, ...input.instructions, ...mcp, ...skills]
+}
+
 export interface Interface {
   readonly environment: (model: Provider.Model) => Effect.Effect<string[]>
   readonly skills: (agent: Agent.Info) => Effect.Effect<string | undefined>
