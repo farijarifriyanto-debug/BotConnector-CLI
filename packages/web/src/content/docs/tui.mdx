@@ -357,7 +357,6 @@ You can customize TUI behavior through `tui.json` (or `tui.jsonc`).
 
 ```json title="tui.json"
 {
-  "$schema": "https://opencode.ai/tui.json",
   "theme": "opencode",
   "leader_timeout": 2000,
   "keybinds": {
@@ -387,7 +386,7 @@ You can customize TUI behavior through `tui.json` (or `tui.jsonc`).
 }
 ```
 
-This is separate from `opencode.json`, which configures server/runtime behavior.
+This is separate from `botconnector.json`, which configures server/runtime behavior.
 
 `keybinds` is merged with built-in defaults, so you only need to configure the shortcuts you want to change.
 
