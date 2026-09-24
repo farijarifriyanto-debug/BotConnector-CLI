@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -21,7 +22,49 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  quick:
+    name: quick CLI gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Typecheck BotConnector CLI
+        working-directory: packages/opencode
+        run: bun run typecheck
+
+      - name: Run prompt/cache regression tests
+        working-directory: packages/opencode
+        run: bun test test/session/system.test.ts --test-name-pattern "BotConnector system context|upstream system context"
+
+      - name: Smoke-build BotConnector CLI
+        env:
+          OPENCODE_VERSION: 0.0.0-ci
+        run: bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
+
+      - name: Smoke-run built binary
+        run: |
+          BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+          test -n "$BIN"
+          chmod +x "$BIN"
+          "$BIN" --version
+
   unit:
+    if: github.event_name != 'pull_request'
+    needs: quick
     name: unit (${{ matrix.settings.name }})
     strategy:
       fail-fast: false
@@ -87,6 +130,8 @@ jobs:
         run: bun run test:httpapi
 
   e2e:
+    if: github.event_name != 'pull_request'
+    needs: quick
     name: e2e (${{ matrix.settings.name }})
     strategy:
       fail-fast: false
