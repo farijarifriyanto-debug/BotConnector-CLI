@@ -109,6 +109,30 @@ describe("session.system", () => {
     }
   })
 
+  test("orders BotConnector system context from stable to dynamic", () => {
+    expect(
+      SystemPrompt.orderContext({
+        providerID: "botconnector",
+        env: ["ENV"],
+        instructions: ["PROJECT"],
+        mcpInstructions: "MCP",
+        skills: "SKILLS",
+      }),
+    ).toEqual(["SKILLS", "MCP", "PROJECT", "ENV"])
+  })
+
+  test("preserves upstream system context order for other providers", () => {
+    expect(
+      SystemPrompt.orderContext({
+        providerID: "anthropic",
+        env: ["ENV"],
+        instructions: ["PROJECT"],
+        mcpInstructions: "MCP",
+        skills: "SKILLS",
+      }),
+    ).toEqual(["ENV", "PROJECT", "MCP", "SKILLS"])
+  })
+
   it.effect("skills output is sorted by name and stable across calls", () =>
     Effect.gen(function* () {
       const prompt = yield* SystemPrompt.Service

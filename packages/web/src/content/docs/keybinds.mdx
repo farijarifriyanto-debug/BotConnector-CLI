@@ -7,7 +7,6 @@ BotConnector has a list of keybinds that you can customize through `tui.json`.
 
 ```json title="tui.json"
 {
-  "$schema": "https://opencode.ai/tui.json",
   "leader_timeout": 2000,
   "keybinds": {
     "leader": "ctrl+x",
@@ -209,7 +208,6 @@ For advanced cases, use an object with `key`, `event`, `preventDefault`, or `fal
 
 ```json title="tui.json"
 {
-  "$schema": "https://opencode.ai/tui.json",
   "keybinds": {
     "messages_copy": ["<leader>y", "ctrl+shift+c"],
     "input_paste": {
@@ -228,7 +226,6 @@ You can disable a keybind by adding the key to `tui.json` with a value of `"none
 
 ```json title="tui.json"
 {
-  "$schema": "https://opencode.ai/tui.json",
   "keybinds": {
     "session_compact": "none"
   }
@@ -239,7 +236,7 @@ You can disable a keybind by adding the key to `tui.json` with a value of `"none
 
 ## Desktop Prompt Shortcuts
 
-The BotConnector desktop app prompt input supports common Readline/Emacs-style shortcuts for editing text. These are built-in and currently not configurable via `opencode.json`.
+The BotConnector desktop app prompt input supports common Readline/Emacs-style shortcuts for editing text. These are built-in and currently not configurable via `botconnector.json`.
 
 | Shortcut | Action                                   |
 | -------- | ---------------------------------------- |

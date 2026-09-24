@@ -43,9 +43,8 @@ In the TUI, open the command palette and select **Enable auto-approve permission
 
 You can set permissions globally (with `*`), and override specific tools.
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "permission": {
     "*": "ask",
     "bash": "allow",
@@ -56,9 +55,8 @@ You can set permissions globally (with `*`), and override specific tools.
 
 You can also set all permissions at once:
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "permission": "allow"
 }
 ```
@@ -69,9 +67,8 @@ You can also set all permissions at once:
 
 For most permissions, you can use an object to apply different actions based on the tool input.
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "permission": {
     "bash": {
       "*": "ask",
@@ -114,9 +111,8 @@ Home expansion (like `~/...`) only affects how a pattern is written. It does not
 
 For example, this allows access to everything under `~/projects/personal/`:
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "permission": {
     "external_directory": {
       "~/projects/personal/**": "allow"
@@ -127,9 +123,8 @@ For example, this allows access to everything under `~/projects/personal/`:
 
 Any directory allowed here inherits the same defaults as the current workspace. Since [`read` defaults to `allow`](#defaults), reads are also allowed for entries under `external_directory` unless overridden. Add explicit rules when a tool should be restricted in these paths, such as blocking edits while keeping reads:
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "permission": {
     "external_directory": {
       "~/projects/personal/**": "allow"
@@ -173,7 +168,7 @@ If you don’t specify anything, BotConnector starts from permissive defaults:
 - `doom_loop` and `external_directory` default to `"ask"`.
 - `read` is `"allow"`, but `.env` files are denied by default:
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
   "permission": {
     "read": {
@@ -208,9 +203,8 @@ You can override permissions per agent. Agent permissions are merged with the gl
 Refer to the [Granular Rules (Object Syntax)](#granular-rules-object-syntax) section above for more detailed pattern matching examples.
 :::
 
-```json title="opencode.json"
+```json title="botconnector.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "permission": {
     "bash": {
       "*": "ask",
@@ -238,7 +232,7 @@ Refer to the [Granular Rules (Object Syntax)](#granular-rules-object-syntax) sec
 
 You can also configure agent permissions in Markdown:
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/botconnector/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent

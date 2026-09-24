@@ -98,8 +98,13 @@ jobs:
         run: |
           set -e
           FILES=$(find dist -type f \( -name '*.zip' -o -name '*.tar.gz' \))
+          RELEASE_FLAGS=()
+          if [[ "${{ inputs.version }}" == *-* ]]; then
+            RELEASE_FLAGS+=(--prerelease)
+          fi
           gh release create "v${{ inputs.version }}" \
             --repo "${{ github.repository }}" \
             --title "BotConnector CLI v${{ inputs.version }}" \
             --notes "Unsigned build. Windows: SmartScreen will warn on first run (click More info -> Run anyway) since this isn't code-signed yet." \
+            "${RELEASE_FLAGS[@]}" \
             $FILES
