@@ -2,6 +2,9 @@ name: build-cli-verify
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/botconnector-cache-stable-v015
 
 jobs:
   build:
