@@ -150,8 +150,9 @@ jobs:
           npm init -y >/dev/null
           npm install --ignore-scripts ../artifacts/platform/*.tgz ../artifacts/main/*.tgz
 
-          # Simulate an existing v0.1.5 install so the npm launcher must
-          # migrate the old generated gateway config before starting.
+          # Simulate an existing v0.1.11 install so the npm launcher must
+          # migrate the old generated gateway config and injected permission
+          # override before starting.
           RAW_HOME="$PWD/migration-home"
           if [ "$RUNNER_OS" = "Windows" ]; then
             TEST_HOME=$(cygpath -w "$RAW_HOME")
@@ -181,6 +182,10 @@ jobs:
                   },
                   models: {}
                 }
+              },
+              permission: {
+                edit: "ask",
+                bash: "ask"
               }
             }, null, 2) + "\n"
           )
@@ -197,7 +202,7 @@ jobs:
           if (gateway.name !== "BotConnector Gateway") throw new Error("legacy gateway name was not migrated")
           if (gateway.options.apiKey !== undefined) throw new Error("legacy apiKey placeholder was not removed")
           if (!gateway.env?.includes("BOTCONNECTOR_API_KEY")) throw new Error("gateway env fallback was not migrated")
-          if (cfg.permission?.edit !== "ask" || cfg.permission?.bash !== "ask") throw new Error("safe permissions were not migrated")
+          if (cfg.permission !== undefined) throw new Error("legacy BotConnector permission override was not removed")
           if (cfg.provider?.ollama?.options?.baseURL !== "http://127.0.0.1:11434/v1") {
             throw new Error("Ollama Local provider was not migrated")
           }
