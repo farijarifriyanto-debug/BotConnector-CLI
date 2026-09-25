@@ -1,6 +1,7 @@
 import type { TuiPlugin, TuiPluginApi } from "@opencode-ai/plugin/tui"
 import type { BuiltinTuiPlugin } from "../builtins"
 import { createMemo, Match, Show, Switch } from "solid-js"
+import { useCommandShortcut } from "../../keymap"
 import { abbreviateHome } from "../../runtime"
 import { useTuiPaths } from "../../context/runtime"
 import { useHomeSessionDestination } from "../../routes/home/session-destination"
@@ -62,6 +63,10 @@ function Version(props: { api: TuiPluginApi }) {
 }
 
 function View(props: { api: TuiPluginApi }) {
+  const commands = useCommandShortcut("command.palette.show")
+  const quit = useCommandShortcut("app.exit")
+  const theme = () => props.api.theme.current
+
   return (
     <box
       width="100%"
@@ -73,6 +78,8 @@ function View(props: { api: TuiPluginApi }) {
       flexShrink={0}
       gap={2}
     >
+      <text fg={theme().textMuted}>{commands()} Commands</text>
+      <text fg={theme().textMuted}>{quit()} Quit</text>
       <Directory api={props.api} />
       <Mcp api={props.api} />
       <box flexGrow={1} />
