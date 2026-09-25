@@ -133,9 +133,9 @@ async function showRemovalSummary(targets: RemovalTargets, method: Installation.
       pnpm: "pnpm uninstall -g botconnector-cli",
       bun: "bun remove -g botconnector-cli",
       yarn: "yarn global remove botconnector-cli",
-      brew: "brew uninstall opencode",
-      choco: "choco uninstall opencode",
-      scoop: "scoop uninstall opencode",
+      brew: "brew uninstall botconnector",
+      choco: "choco uninstall botconnector",
+      scoop: "scoop uninstall botconnector",
     }
     prompts.log.info(`  ✓ Package: ${cmds[method] || method}`)
   }
