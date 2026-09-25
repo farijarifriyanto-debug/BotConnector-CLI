@@ -87,13 +87,20 @@ function migrateDefaultConfig() {
       }
     }
 
-    config.permission ??= {}
-    if (config.permission.edit === undefined) {
-      config.permission.edit = "ask"
-      changed = true
-    }
-    if (config.permission.bash === undefined) {
-      config.permission.bash = "ask"
+    // 0.1.8-0.1.11 injected an exact { edit: "ask", bash: "ask" }
+    // permission block into generated configs. Remove only that proven legacy
+    // shape so existing users regain upstream OpenCode defaults without
+    // clobbering any custom permission policy.
+    const permission = config.permission
+    if (
+      permission &&
+      typeof permission === "object" &&
+      !Array.isArray(permission) &&
+      Object.keys(permission).length === 2 &&
+      permission.edit === "ask" &&
+      permission.bash === "ask"
+    ) {
+      delete config.permission
       changed = true
     }
 

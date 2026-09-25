@@ -38,9 +38,5 @@
       },
       "models": {}
     }
-  },
-  "permission": {
-    "edit": "ask",
-    "bash": "ask"
   }
 }

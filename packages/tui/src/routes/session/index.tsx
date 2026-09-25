@@ -253,15 +253,15 @@ export function Session() {
   })
 
   const dimensions = useTerminalDimensions()
-  const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "hide")
+  const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
   const [sidebarOpen, setSidebarOpen] = createSignal(false)
   const [conceal, setConceal] = createSignal(true)
   const thinking = useThinkingMode()
   const thinkingMode = thinking.mode
-  const showThinking = createMemo(() => false)
+  const showThinking = createMemo(() => true)
   const [timestamps, setTimestamps] = kv.signal<"hide" | "show">("timestamps", "hide")
-  const [showDetails, setShowDetails] = kv.signal("tool_details_visibility", false)
-  const [showAssistantMetadata, _setShowAssistantMetadata] = kv.signal("assistant_metadata_visibility", false)
+  const [showDetails, setShowDetails] = kv.signal("tool_details_visibility", true)
+  const [showAssistantMetadata, _setShowAssistantMetadata] = kv.signal("assistant_metadata_visibility", true)
   const [showScrollbar, setShowScrollbar] = kv.signal("scrollbar_visible", false)
   const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
   const [_animationsEnabled, _setAnimationsEnabled] = kv.signal("animations_enabled", true)
@@ -270,7 +270,9 @@ export function Session() {
   const wide = createMemo(() => dimensions().width > 120)
   const sidebarVisible = createMemo(() => {
     if (session()?.parentID) return false
-    return sidebarOpen()
+    if (sidebarOpen()) return true
+    if (sidebar() === "auto" && wide()) return true
+    return false
   })
   const showTimestamps = createMemo(() => timestamps() === "show")
   const contentWidth = createMemo(() => dimensions().width - (sidebarVisible() ? 42 : 0) - 4)
@@ -1657,8 +1659,8 @@ function ReasoningHeader(props: {
   const { theme } = useTheme()
   const fg = () =>
     props.open
-      ? RGBA.fromValues(theme.warning.r, theme.warning.g, theme.warning.b, theme.thinkingOpacity)
-      : theme.warning
+      ? RGBA.fromValues(theme.textMuted.r, theme.textMuted.g, theme.textMuted.b, theme.thinkingOpacity)
+      : theme.textMuted
   const completed = () => {
     if (props.encrypted) return `Thought${props.duration ? ` · ${props.duration}` : ""}`
     const detail = [props.title, props.duration].filter(Boolean).join(" · ")
@@ -1876,7 +1878,7 @@ function InlineTool(props: {
     if (failed()) return theme.error
     if (hover() && props.onClick) return theme.text
     if (props.complete) return theme.textMuted
-    return theme.text
+    return theme.secondary
   })
 
   return (

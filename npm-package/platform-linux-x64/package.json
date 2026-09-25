@@ -1,6 +1,6 @@
 {
   "name": "botconnector-cli-linux-x64",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "BotConnector CLI prebuilt binary for Linux x64. Not meant to be installed directly -- see the botconnector-cli package.",
   "license": "MIT",
   "repository": {
