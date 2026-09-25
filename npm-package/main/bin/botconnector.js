@@ -23,13 +23,16 @@ function seedDefaultConfig() {
   try {
     const configDir = path.join(os.homedir(), ".config", "botconnector")
     const dest = path.join(configDir, "botconnector-cloud.jsonc")
-    if (fs.existsSync(dest)) return
-    const src = path.join(__dirname, "..", "default-config", "botconnector-cloud.jsonc")
-    if (!fs.existsSync(src)) return
-    fs.mkdirSync(configDir, { recursive: true })
-    fs.copyFileSync(src, dest)
+    if (!fs.existsSync(dest)) {
+      const src = path.join(__dirname, "..", "default-config", "botconnector-cloud.jsonc")
+      if (fs.existsSync(src)) {
+        fs.mkdirSync(configDir, { recursive: true })
+        fs.copyFileSync(src, dest)
+      }
+    }
+    return dest
   } catch {
-    // best-effort only
+    return undefined
   }
 }
 
@@ -95,11 +98,15 @@ function resolveBinary() {
   }
 }
 
-seedDefaultConfig()
+const seededConfig = seedDefaultConfig()
 migrateDefaultConfig()
 
 const binPath = resolveBinary()
-const result = spawnSync(binPath, process.argv.slice(2), { stdio: "inherit" })
+const env = { ...process.env }
+if (!env.BOTCONNECTOR_CONFIG && seededConfig && fs.existsSync(seededConfig)) {
+  env.BOTCONNECTOR_CONFIG = seededConfig
+}
+const result = spawnSync(binPath, process.argv.slice(2), { stdio: "inherit", env })
 
 if (result.error) {
   console.error(`botconnector-cli: failed to launch ${binPath}: ${result.error.message}`)
