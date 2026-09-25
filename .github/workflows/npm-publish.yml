@@ -6,10 +6,10 @@ on:
       version:
         description: "npm version to publish"
         required: true
-        default: "0.1.7"
+        default: "0.1.8"
         type: string
       reuse_run_id:
-        description: "Optional prior npm-publish run ID whose verified artifacts should be reused"
+        description: "Optional successful npm-release-verify run ID from this exact commit"
         required: false
         default: ""
         type: string
@@ -57,19 +57,18 @@ jobs:
         run: |
           set -euo pipefail
           RUN_ID="${{ inputs.reuse_run_id }}"
-          OLD_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" --jq '.head_sha')
-          test -n "$OLD_SHA"
-          BAD_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${OLD_SHA}...${GITHUB_SHA}" --jq '.files[].filename' | grep -v '^\.github/workflows/' || true)
-          if [ -n "$BAD_FILES" ]; then
-            echo "::error::Refusing to reuse artifacts because product files changed:"
-            printf '%s\n' "$BAD_FILES"
-            exit 1
-          fi
+          RUN_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}")
+          OLD_SHA=$(printf '%s' "$RUN_JSON" | jq -r '.head_sha')
+          RUN_NAME=$(printf '%s' "$RUN_JSON" | jq -r '.name')
+          CONCLUSION=$(printf '%s' "$RUN_JSON" | jq -r '.conclusion')
+          test "$RUN_NAME" = "npm-release-verify"
+          test "$CONCLUSION" = "success"
+          test "$OLD_SHA" = "$GITHUB_SHA"
           for NAME in npm-main npm-linux-x64 npm-win32-x64; do
             COUNT=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq "[.artifacts[] | select(.name == \"$NAME\" and .expired == false)] | length")
             test "$COUNT" = "1"
           done
-          echo "Reuse run ${RUN_ID} verified: only workflow files changed and all npm artifacts are present."
+          echo "Reuse run ${RUN_ID} verified: successful npm-release-verify for this exact commit and all npm artifacts are present."
 
   oidc-preflight:
     needs: preflight
