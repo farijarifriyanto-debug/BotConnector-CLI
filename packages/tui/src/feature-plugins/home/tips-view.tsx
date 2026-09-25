@@ -68,7 +68,7 @@ function parse(tip: string): TipPart[] {
   return parts
 }
 
-const NO_MODELS_TIP = "Run {highlight}/connect{/highlight} to add an AI provider and start coding"
+const NO_MODELS_TIP = "Run {highlight}/connect{/highlight} to connect BotConnector Gateway or another AI provider"
 const NO_MODELS_PARTS = parse(NO_MODELS_TIP)
 
 function shortcutText(value: string) {
@@ -185,7 +185,7 @@ const TIPS: Tip[] = [
   (shortcuts) => `Use ${commandText("/export", shortcuts.sessionExport())} to save the conversation as Markdown`,
   (shortcuts) => press(shortcuts.messagesCopy(), "to copy the assistant's last message to clipboard"),
   (shortcuts) => press(shortcuts.commandList(), "to see all available actions and commands"),
-  "Run {highlight}/connect{/highlight} to add API keys for 75+ supported LLM providers",
+  "Use {highlight}/connect{/highlight} to connect BotConnector Gateway or another supported provider",
   (shortcuts) => `The leader key is ${shortcutText(shortcuts.leader())}; combine with other keys for quick actions`,
   (shortcuts) => press(shortcuts.modelCycleRecent(), "to quickly switch between recently used models"),
   (shortcuts) => press(shortcuts.sessionSidebarToggle(), "in a session to show or hide the sidebar panel"),
@@ -246,7 +246,7 @@ const TIPS: Tip[] = [
   "Use {highlight}/botconnector{/highlight} in GitHub issues/PRs to trigger AI actions",
   "Run {highlight}botconnector github install{/highlight} to set up the GitHub workflow",
   "Comment {highlight}/botconnector fix this{/highlight} on issues to auto-create PRs",
-  "Comment {highlight}/oc{/highlight} on PR code lines for targeted code reviews",
+  "Comment {highlight}/botconnector review this{/highlight} on PR code lines for targeted reviews",
   'Use {highlight}"theme": "system"{/highlight} to match your terminal\'s colors',
   "Create JSON theme files in {highlight}.botconnector/themes/{/highlight} directory",
   "Themes support dark/light variants for both modes",

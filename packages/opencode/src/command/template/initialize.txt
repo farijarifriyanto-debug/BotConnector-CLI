@@ -1,6 +1,13 @@
 Create or update `AGENTS.md` for this repository.
 
-The goal is a compact instruction file that helps future OpenCode sessions avoid mistakes and ramp up quickly. Every line should answer: "Would an agent likely miss this without help?" If not, leave it out.
+The goal is a compact instruction file that helps future BotConnector sessions avoid mistakes, avoid repeated discovery, and ramp up quickly. Every line should answer: "Would an agent likely miss this without help?" If not, leave it out.
+
+Also optimize for execution efficiency:
+- capture the real source-of-truth entrypoints and commands so future agents do not rediscover them;
+- record non-obvious blockers, boundaries, and required verification, not generic advice;
+- prefer focused checks over exhaustive suites unless the repo requires the broader gate;
+- state clear stop conditions when a workflow is easy to over-investigate;
+- never add instructions that encourage repeated scans, speculative refactors, or redundant validation.
 
 User-provided focus or constraints (honor these):
 $ARGUMENTS

@@ -6,7 +6,7 @@ on:
       version:
         description: "npm version to publish"
         required: true
-        default: "0.1.10"
+        default: "0.1.11"
         type: string
       reuse_run_id:
         description: "Optional successful npm-release-verify run ID from this exact commit"
