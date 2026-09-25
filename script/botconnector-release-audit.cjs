@@ -27,8 +27,12 @@ if (ollama?.name !== "Ollama Local") fail("Ollama Local provider missing")
 if (ollama?.options?.baseURL !== "http://127.0.0.1:11434/v1") fail("Ollama Local must be loopback-only")
 if (Object.keys(ollama?.models ?? {}).some((id) => id.endsWith(":cloud"))) fail("Local config exposes a :cloud model")
 
-for (const permission of ["edit", "bash"]) {
-  if (cfg.permission?.[permission] !== "ask") fail(`default permission ${permission} must be ask`)
+if (cfg.permission !== undefined) fail("bundled config must not override upstream OpenCode permissions")
+if (launcher.includes('config.permission.edit = "ask"') || launcher.includes('config.permission.bash = "ask"')) {
+  fail("launcher still injects BotConnector-specific ask permissions")
+}
+if (!launcher.includes('delete config.permission')) {
+  fail("launcher does not migrate the exact legacy generated permission override")
 }
 
 const userFacing = [
@@ -90,22 +94,12 @@ if (!footer.includes('provider.id === "ollama"') || !footer.includes('"Local"'))
 }
 
 const rootAgents = read("AGENTS.md")
-if (!rootAgents.includes("# BotConnector Agent Operating Contract")) {
-  fail("root AGENTS.md is missing the BotConnector operating contract")
-}
-if (!rootAgents.includes("Do not re-open or re-search unchanged files")) {
-  fail("root AGENTS.md does not guard against repeated rediscovery")
-}
-if (rootAgents.includes("default branch in this repo is `dev`")) {
-  fail("root AGENTS.md still points agents at the stale upstream dev branch")
-}
-if (!rootAgents.includes("default and release branch in this BotConnector repository is `main`")) {
-  fail("root AGENTS.md does not identify main as the BotConnector release baseline")
-}
+if (rootAgents.includes("# BotConnector Agent Operating Contract")) fail("root AGENTS.md still overrides upstream OpenCode agent behavior")
+if (!rootAgents.includes("The default branch in this repo is `dev`.")) fail("root AGENTS.md is not restored to the upstream OpenCode baseline")
 const initializeTemplate = read("packages/opencode/src/command/template/initialize.txt")
-if (initializeTemplate.includes("future OpenCode sessions")) {
-  fail("AGENTS.md initialize template still uses OpenCode user-facing identity")
-}
+if (!initializeTemplate.includes("future OpenCode sessions")) fail("AGENTS.md initialize template is not restored to upstream OpenCode behavior")
+if (initializeTemplate.includes("future BotConnector sessions")) fail("initialize template still contains BotConnector-specific agent behavior")
+
 const homeRoute = read("packages/tui/src/routes/home.tsx")
 if (!homeRoute.includes("CLOUD + LOCAL AI ROUTER")) {
   fail("TUI home is missing BotConnector product identity")
@@ -113,9 +107,17 @@ if (!homeRoute.includes("CLOUD + LOCAL AI ROUTER")) {
 const sessionRoute = read("packages/tui/src/routes/session/index.tsx")
 if (!homeRoute.includes("CLOUD + LOCAL AI ROUTER")) fail("minimal BotConnector home identity missing")
 if (homeRoute.includes('name="home_bottom"')) fail("default home still renders the rotating tips/dashboard area")
-if (!sessionRoute.includes('kv.signal<"auto" | "hide">("sidebar", "hide")')) fail("session sidebar is not hidden by default")
-if (!sessionRoute.includes('return sidebarOpen()')) fail("wide terminals can still auto-open the session sidebar")
-if (!sessionRoute.includes('kv.signal("assistant_metadata_visibility", false)')) fail("assistant metadata is still noisy by default")
+const botconnectorTheme = read("packages/tui/src/theme/assets/botconnector.json")
+if (!botconnectorTheme.includes('"darkStep9": "#22d3ee"')) fail("BotConnector primary brand color is not cyan")
+if (!botconnectorTheme.includes('"darkSecondary": "#60a5fa"')) fail("BotConnector tool/activity color is not blue")
+if (!botconnectorTheme.includes('"darkOrange": "#fbbf24"')) fail("BotConnector warning color is not amber")
+const readmeBody = read("README.md")
+if (!readmeBody.includes("Cascadia Mono")) fail("recommended BotConnector terminal font is not documented")
+if (!sessionRoute.includes('kv.signal<"auto" | "hide">("sidebar", "auto")')) fail("session sidebar behavior is not restored to upstream OpenCode")
+if (!sessionRoute.includes('if (sidebar() === "auto" && wide()) return true')) fail("wide-terminal sidebar behavior is not restored to upstream OpenCode")
+if (!sessionRoute.includes('const showThinking = createMemo(() => true)')) fail("thinking visibility is not restored to upstream OpenCode")
+if (!sessionRoute.includes('kv.signal("tool_details_visibility", true)')) fail("tool details are not restored to upstream OpenCode")
+if (!sessionRoute.includes('kv.signal("assistant_metadata_visibility", true)')) fail("assistant metadata is not restored to upstream OpenCode")
 
 const promptComponent = read("packages/tui/src/component/prompt/index.tsx")
 if (!promptComponent.includes("Ask BotConnector…")) {
@@ -159,9 +161,9 @@ if (readTool.includes('output += `\\n\\n<system-reminder>')) {
 }
 
 const agent = read("packages/opencode/src/cli/cmd/agent.ts")
-if (agent.includes("default: all")) fail("agent creation still advertises allow-all permissions")
-if (!agent.includes("SAFE_DEFAULT_PERMISSIONS")) fail("agent creation safe permission defaults missing")
-if (!agent.includes("initialValues: SAFE_DEFAULT_PERMISSIONS")) fail("interactive agent permission picker defaults to all permissions")
+if (!agent.includes("default: all")) fail("agent creation no longer matches upstream OpenCode permission behavior")
+if (agent.includes("SAFE_DEFAULT_PERMISSIONS")) fail("BotConnector-specific permission defaults still override upstream OpenCode")
+if (!agent.includes("initialValues: AVAILABLE_PERMISSIONS")) fail("interactive agent permission picker is not restored to upstream OpenCode")
 
 const uninstall = read("packages/opencode/src/cli/cmd/uninstall.ts")
 for (const legacy of ["uninstall -g opencode-ai", "uninstall opencode"]) {
