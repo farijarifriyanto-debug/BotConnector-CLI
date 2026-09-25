@@ -228,6 +228,7 @@ jobs:
 
   publish-main:
     needs: publish-platforms
+    if: ${{ always() && needs.publish-platforms.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
