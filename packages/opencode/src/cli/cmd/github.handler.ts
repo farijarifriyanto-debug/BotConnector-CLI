@@ -336,7 +336,7 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
 
         await Filesystem.write(
           path.join(app.root, WORKFLOW_FILE),
-          `name: opencode
+          `name: BotConnector
 
 on:
   issue_comment:
@@ -363,7 +363,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run opencode
+      - name: Run BotConnector
         uses: anomalyco/opencode/github@latest${envStr}
         with:
           model: ${provider}/${model}`,
