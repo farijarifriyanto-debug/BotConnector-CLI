@@ -29,6 +29,18 @@
         "ling-3.0-flash-sante": { "name": "Ling 3.0 Flash Sante" },
         "ling-3.0-flash-vl": { "name": "Ling 3.0 Flash VL" }
       }
+    },
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama Local",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
+      "models": {}
     }
+  },
+  "permission": {
+    "edit": "ask",
+    "bash": "ask"
   }
 }

@@ -46,6 +46,9 @@ jobs:
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-linux-x64']")" = "$V"
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-win32-x64']")" = "$V"
           npm --version
+      - name: Enforce BotConnector self-audit release gate
+        shell: bash
+        run: node script/botconnector-release-audit.cjs
       - name: Validate reused artifacts
         if: ${{ inputs.reuse_run_id != '' }}
         env:

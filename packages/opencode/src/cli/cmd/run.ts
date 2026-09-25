@@ -175,7 +175,7 @@ export const RunCommand = effectCmd({
         type: "string",
         choices: ["default", "json"],
         default: "default",
-        describe: "format: default (formatted) or json (raw JSON events)",
+        describe: "format: default (formatted) or json (sanitized JSON events)",
       })
       .option("file", {
         alias: ["f"],
@@ -189,17 +189,17 @@ export const RunCommand = effectCmd({
       })
       .option("attach", {
         type: "string",
-        describe: "attach to a running opencode server (e.g., http://localhost:4096)",
+        describe: "attach to a running BotConnector server (e.g., http://localhost:4096)",
       })
       .option("password", {
         alias: ["p"],
         type: "string",
-        describe: "basic auth password (defaults to OPENCODE_SERVER_PASSWORD)",
+        describe: "basic auth password (defaults to BOTCONNECTOR_SERVER_PASSWORD)",
       })
       .option("username", {
         alias: ["u"],
         type: "string",
-        describe: "basic auth username (defaults to OPENCODE_SERVER_USERNAME or 'opencode')",
+        describe: "basic auth username (defaults to BOTCONNECTOR_SERVER_USERNAME or 'botconnector')",
       })
       .option("dir", {
         type: "string",
@@ -681,7 +681,6 @@ export const RunCommand = effectCmd({
               JSON.stringify({
                 type,
                 timestamp: Date.now(),
-                sessionID,
                 ...data,
               }) + EOL,
             )
@@ -722,7 +721,7 @@ export const RunCommand = effectCmd({
               if (part.sessionID !== sessionID) continue
 
               if (part.type === "tool" && (part.state.status === "completed" || part.state.status === "error")) {
-                if (emit("tool_use", { part })) continue
+                if (emit("tool_use", { tool: part.tool, status: part.state.status })) continue
                 if (part.state.status === "completed") {
                   await tool(part)
                   continue
@@ -743,15 +742,15 @@ export const RunCommand = effectCmd({
               }
 
               if (part.type === "step-start") {
-                if (emit("step_start", { part })) continue
+                if (emit("step_start", {})) continue
               }
 
               if (part.type === "step-finish") {
-                if (emit("step_finish", { part })) continue
+                if (emit("step_finish", {})) continue
               }
 
               if (part.type === "text" && part.time?.end) {
-                if (emit("text", { part })) continue
+                if (emit("text", { text: part.text })) continue
                 const text = part.text.trim()
                 if (!text) continue
                 if (!process.stdout.isTTY) {
@@ -764,7 +763,7 @@ export const RunCommand = effectCmd({
               }
 
               if (part.type === "reasoning" && part.time?.end && thinking) {
-                if (emit("reasoning", { part })) continue
+                if (emit("reasoning", { text: part.text })) continue
                 const text = part.text.trim()
                 if (!text) continue
                 const line = `Thinking: ${text}`
@@ -786,7 +785,7 @@ export const RunCommand = effectCmd({
                 err = String(props.error.data.message)
               }
               error = error ? error + EOL + err : err
-              if (emit("error", { error: props.error })) continue
+              if (emit("error", { error: formatRunError(props.error) })) continue
               UI.error(err)
             }
 
@@ -852,7 +851,7 @@ export const RunCommand = effectCmd({
               variant: args.variant,
             })
             if (result.error) {
-              if (!emit("error", { error: result.error })) UI.error(formatRunError(result.error))
+              if (!emit("error", { error: formatRunError(result.error) })) UI.error(formatRunError(result.error))
               process.exitCode = 1
               return
             }
@@ -869,7 +868,7 @@ export const RunCommand = effectCmd({
             parts: [...files, { type: "text", text: message }],
           })
           if (result.error) {
-            if (!emit("error", { error: result.error })) UI.error(formatRunError(result.error))
+            if (!emit("error", { error: formatRunError(result.error) })) UI.error(formatRunError(result.error))
             process.exitCode = 1
             return
           }
@@ -982,7 +981,7 @@ type MiniCommandInput = {
 export async function runMini(input: MiniCommandInput) {
   if (!RunCommand.handler) throw new Error("Mini command handler is unavailable")
   await RunCommand.handler({
-    $0: "opencode",
+    $0: "botconnector",
     _: ["mini"],
     message: input.prompt ? [input.prompt] : [],
     command: undefined,

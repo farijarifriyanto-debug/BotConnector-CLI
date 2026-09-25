@@ -958,6 +958,7 @@ export function RunModelSelectBody(props: {
   const [query, setQuery] = createSignal("")
   const entries = createMemo<ModelEntry[]>(() =>
     (props.providers() ?? [])
+      .filter((provider) => !provider.id.startsWith("opencode"))
       .flatMap((provider) =>
         Object.entries(provider.models)
           .filter(([, model]) => model.status !== "deprecated")
@@ -966,11 +967,13 @@ export function RunModelSelectBody(props: {
             const current = props.current()?.providerID === provider.id && props.current()?.modelID === modelID
             const footer = current
               ? "current"
-              : model.cost?.input === 0 && provider.id === "opencode"
-                ? "Free"
-                : title !== modelID
-                  ? modelID
-                  : undefined
+              : provider.id === "ollama"
+                ? "Local"
+                : model.cost?.input === 0 && provider.id === "botconnector"
+                  ? "Free"
+                  : title !== modelID
+                    ? modelID
+                    : undefined
             return {
               providerID: provider.id,
               modelID,
@@ -984,10 +987,9 @@ export function RunModelSelectBody(props: {
           }),
       )
       .sort((a, b) => {
-        const provider = Number(a.providerID !== "opencode") - Number(b.providerID !== "opencode")
-        if (provider !== 0) {
-          return provider
-        }
+        const rank = (id: string) => (id === "botconnector" ? 0 : id === "ollama" ? 1 : 2)
+        const provider = rank(a.providerID) - rank(b.providerID)
+        if (provider !== 0) return provider
 
         const name = a.providerName.localeCompare(b.providerName)
         if (name !== 0) {

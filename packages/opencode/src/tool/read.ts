@@ -352,9 +352,8 @@ export const ReadTool = Tool.define<
 
       yield* warm(filepath)
 
-      if (loaded.length > 0) {
-        output += `\n\n<system-reminder>\n${loaded.map((item) => item.content).join("\n\n")}\n</system-reminder>`
-      }
+      // Instruction files are internal agent context. Never append their
+      // contents to the user-visible Read tool output.
 
       return {
         title,

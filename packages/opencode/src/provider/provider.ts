@@ -1579,6 +1579,56 @@ const layer = Layer.effect(
           database[providerID] = parsed
         }
 
+        // BotConnector Local: discover Ollama models only from loopback. Remote
+        // Ollama endpoints and :cloud aliases must never be presented as Local.
+        const ollamaID = ProviderV2.ID.make("ollama")
+        const ollama = database[ollamaID]
+        const ollamaBaseURL = ollama?.options?.baseURL
+        if (ollama && typeof ollamaBaseURL === "string") {
+          yield* Effect.promise(async () => {
+            try {
+              const endpoint = new URL(ollamaBaseURL)
+              if (!["127.0.0.1", "localhost", "::1"].includes(endpoint.hostname)) return
+              const tagsURL = new URL("/api/tags", endpoint)
+              const response = await fetch(tagsURL, { signal: AbortSignal.timeout(750) })
+              if (!response.ok) return
+              const payload = await response.json()
+              if (!isRecord(payload) || !Array.isArray(payload.models)) return
+              for (const raw of payload.models) {
+                if (!isRecord(raw)) continue
+                const name = typeof raw.name === "string" ? raw.name : typeof raw.model === "string" ? raw.model : undefined
+                if (!name || name.endsWith(":cloud")) continue
+                const size = typeof raw.size === "number" && Number.isFinite(raw.size) ? raw.size : undefined
+                ollama.models[name] = {
+                  id: ModelV2.ID.make(name),
+                  providerID: ollamaID,
+                  name,
+                  family: "local",
+                  api: { id: name, url: ollamaBaseURL, npm: "@ai-sdk/openai-compatible" },
+                  status: "active",
+                  headers: {},
+                  options: size ? { botconnectorLocalSizeBytes: size } : {},
+                  cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+                  limit: { context: 32768, output: 8192 },
+                  capabilities: {
+                    temperature: true,
+                    reasoning: false,
+                    attachment: false,
+                    toolcall: true,
+                    input: { text: true, audio: false, image: false, video: false, pdf: false },
+                    output: { text: true, audio: false, image: false, video: false, pdf: false },
+                    interleaved: false,
+                  },
+                  release_date: "",
+                  variants: {},
+                }
+              }
+            } catch {
+              // Local Ollama is optional; an unavailable loopback service is not an error.
+            }
+          })
+        }
+
         // load env
         const envs = yield* env.all()
         for (const [id, provider] of Object.entries(database)) {
@@ -1899,6 +1949,17 @@ const layer = Layer.effect(
       const key = `${model.providerID}/${model.id}`
       if (s.models.has(key)) return s.models.get(key)!
 
+      if (model.providerID === "ollama") {
+        const size = model.options?.botconnectorLocalSizeBytes
+        if (typeof size === "number" && Number.isFinite(size) && size > os.totalmem() * 0.4) {
+          const gib = (size / 1024 ** 3).toFixed(1)
+          const total = (os.totalmem() / 1024 ** 3).toFixed(1)
+          process.stderr.write(
+            `BotConnector Local warning: ${model.id} is about ${gib} GiB on a ${total} GiB system; loading it may cause memory pressure.\n`,
+          )
+        }
+      }
+
       const provider = s.providers[model.providerID]
       return yield* EffectPromise.refineRejection(
         async () => {
@@ -2010,6 +2071,14 @@ const layer = Layer.effect(
       if (cfg.model) return parseModel(cfg.model)
 
       const s = yield* InstanceState.get(state)
+
+      // The canonical BotConnector Gateway wins over stale upstream model history.
+      const canonical = s.providers[ProviderV2.ID.make("botconnector")]
+      if (canonical && cfg.provider?.botconnector) {
+        const [model] = sort(Object.values(canonical.models))
+        if (model) return { providerID: canonical.id, modelID: model.id }
+      }
+
       const recent = yield* fs.readJson(path.join(Global.Path.state, "model.json")).pipe(
         Effect.map((x): { providerID: ProviderV2.ID; modelID: ModelV2.ID }[] => {
           if (!isRecord(x) || !Array.isArray(x.recent)) return []
@@ -2023,6 +2092,7 @@ const layer = Layer.effect(
         Effect.catch(() => Effect.succeed([] as { providerID: ProviderV2.ID; modelID: ModelV2.ID }[])),
       )
       for (const entry of recent) {
+        if (entry.providerID.startsWith("opencode")) continue
         const provider = s.providers[entry.providerID]
         if (!provider) continue
         if (!provider.models[entry.modelID]) continue

@@ -38,6 +38,9 @@ jobs:
             throw new Error("BOTCONNECTOR_API_KEY env fallback missing")
           }
           NODE
+      - name: Enforce BotConnector self-audit release gate
+        shell: bash
+        run: node script/botconnector-release-audit.cjs
 
   pack-main:
     needs: verify-metadata
@@ -126,6 +129,7 @@ jobs:
       run:
         shell: bash
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "24"
@@ -193,4 +197,22 @@ jobs:
           if (gateway.name !== "BotConnector Gateway") throw new Error("legacy gateway name was not migrated")
           if (gateway.options.apiKey !== undefined) throw new Error("legacy apiKey placeholder was not removed")
           if (!gateway.env?.includes("BOTCONNECTOR_API_KEY")) throw new Error("gateway env fallback was not migrated")
+          if (cfg.permission?.edit !== "ask" || cfg.permission?.bash !== "ask") throw new Error("safe permissions were not migrated")
+          if (cfg.provider?.ollama?.options?.baseURL !== "http://127.0.0.1:11434/v1") {
+            throw new Error("Ollama Local provider was not migrated")
+          }
           NODE
+
+          # A legacy OpenCode config must not override BotConnector's canonical config.
+          POISON="$PWD/legacy-opencode-config.jsonc"
+          printf '%s\n' '{"provider":{"opencode":{"models":{"poison":{"name":"POISON"}}}}}' > "$POISON"
+          export OPENCODE_CONFIG="$POISON"
+          npx --no-install botconnector models botconnector | grep -q '^botconnector/'
+
+          HELP="$(npx --no-install botconnector --help)"
+          if printf '%s\n' "$HELP" | grep -Eqi 'start opencode tui|run opencode with a message|starts a headless opencode server|uninstall opencode|opencode\.local'; then
+            echo "::error::OpenCode branding leaked into BotConnector help"
+            exit 1
+          fi
+
+          node ../script/botconnector-local-privacy-smoke.cjs
