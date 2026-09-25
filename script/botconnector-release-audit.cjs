@@ -89,6 +89,32 @@ if (!footer.includes('provider.id === "ollama"') || !footer.includes('"Local"'))
   fail("TUI model selector does not identify Ollama as Local")
 }
 
+const rootAgents = read("AGENTS.md")
+if (!rootAgents.includes("# BotConnector Agent Operating Contract")) {
+  fail("root AGENTS.md is missing the BotConnector operating contract")
+}
+if (!rootAgents.includes("Do not re-open or re-search unchanged files")) {
+  fail("root AGENTS.md does not guard against repeated rediscovery")
+}
+if (rootAgents.includes("default branch in this repo is `dev`")) {
+  fail("root AGENTS.md still points agents at the stale upstream dev branch")
+}
+if (!rootAgents.includes("default and release branch in this BotConnector repository is `main`")) {
+  fail("root AGENTS.md does not identify main as the BotConnector release baseline")
+}
+const initializeTemplate = read("packages/opencode/src/command/template/initialize.txt")
+if (initializeTemplate.includes("future OpenCode sessions")) {
+  fail("AGENTS.md initialize template still uses OpenCode user-facing identity")
+}
+const homeRoute = read("packages/tui/src/routes/home.tsx")
+if (!homeRoute.includes("BOTCONNECTOR // CLOUD + LOCAL AI ROUTER")) {
+  fail("TUI home is missing BotConnector product identity")
+}
+const promptComponent = read("packages/tui/src/component/prompt/index.tsx")
+if (!promptComponent.includes("Ask BotConnector…")) {
+  fail("TUI prompt still uses generic upstream home copy")
+}
+
 const providerSource = read("packages/opencode/src/provider/provider.ts")
 if (!providerSource.includes('(providerID === "botconnector" ? 32_768 : 0)')) {
   fail("BotConnector Gateway models without metadata have no bounded context fallback")

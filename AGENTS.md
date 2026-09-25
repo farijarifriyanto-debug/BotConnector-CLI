@@ -1,12 +1,43 @@
+# BotConnector Agent Operating Contract
+
+These rules exist to keep agent work focused, efficient, and verifiable. Apply them before the engineering conventions below.
+
+## Work loop
+
+- Start from the user's requested outcome and identify the smallest blocking function before broad cleanup.
+- Read the highest-value sources first: the nearest `AGENTS.md`, relevant manifests/config, the exact entrypoint, and focused tests. Do not recursively scan the repo unless the task genuinely spans it.
+- Reuse facts already established in the current session. Do not re-open or re-search unchanged files just to reconfirm the same point.
+- Prefer executable sources of truth over prose. When docs disagree with code, config, CI, or tests, trust the executable source and note the mismatch.
+- Keep one active hypothesis at a time. Inspect enough evidence to confirm or reject it, then move on. Avoid speculative multi-branch debugging.
+- Fix the source of truth, not a single developer machine, generated artifact, cache, or local workaround unless the task explicitly targets that environment.
+- Make the smallest coherent change that closes the blocker. Do not mix unrelated cleanup into the same patch.
+- Verify proportionally: run the narrowest relevant typecheck/test/smoke first. Run broader suites only when the change crosses package or runtime boundaries.
+- Stop when the requested behavior is proven and required checks pass. Do not continue refactoring merely because more cleanup is possible.
+
+## Token and tool discipline
+
+- Do not repeat large file reads. Read targeted ranges after the first pass.
+- Search for exact symbols/phrases before opening broad directories.
+- Prefer one batched investigation over many tiny tool calls when the needed targets are known.
+- Summarize findings before changing direction so later steps can reuse them.
+- Ask the user only when an important decision cannot be answered from the repo. Ask one short batch at most.
+
+## BotConnector product boundaries
+
+- User-facing identity is BotConnector. Upstream OpenCode internals may remain where technically required, but must not leak into normal BotConnector UI, help, defaults, provider selection, generated guidance, or release metadata.
+- Cloud and Local are distinct execution modes. Local must never silently fall back to a remote `:cloud` model or BotConnector Gateway request.
+- Prefer BotConnector Gateway for cloud defaults and loopback Ollama for local defaults.
+- Build/release verification belongs in GitHub Actions. Do not treat a developer laptop build as the release source of truth.
+- Preserve mature upstream implementation patterns when they are technically sound; rebrand or adapt only the user-facing and BotConnector-specific boundaries.
+
 - To regenerate the legacy JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
 - After changing the public Protocol or Server `HttpApi`, run `bun run generate` from `packages/client`. Do not edit `src/generated` or `src/generated-effect` directly.
 - Keep runtime dependencies directed from Schema to Core and Protocol, then from Core and Protocol to Server. Client runtime code may depend on Schema and Protocol but never Core or Server; `sdk-next` composes Client, Core, and Server.
-- The default branch in this repo is `dev`.
-- Local `main` ref may not exist; use `dev` or `origin/dev` for diffs.
+- The default and release branch in this BotConnector repository is `main`. Use `origin/main` as the baseline for release and PR diffs.
 
 ## Branch Names
 
-Use a short branch name of at most three words, separated by hyphens. Do not use slashes or type prefixes such as `feat/` or `fix/`.
+Use a short branch name that states the work clearly. BotConnector maintenance branches may use conventional prefixes such as `fix/`, `feat/`, or `release/` when that matches the active GitHub workflow.
 
 Examples: `session-recovery`, `fix-scroll-state`, `regenerate-sdk`.
 
