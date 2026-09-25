@@ -42,8 +42,48 @@ jobs:
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-win32-x64']")" = "$V"
           npm --version
 
-  build-platform:
+  oidc-preflight:
     needs: preflight
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+      - name: Verify npm trusted-publisher OIDC exchange
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
+          verify_oidc() {
+            local dir="$1"
+            local pkg
+            pkg=$(node -p "require('./${dir}/package.json').name")
+            echo "::group::OIDC preflight ${pkg}"
+            set +e
+            out=$(npm publish "./${dir}" --dry-run --loglevel verbose 2>&1)
+            rc=$?
+            set -e
+            printf '%s\n' "$out" | grep -E 'npm verbose oidc|npm http fetch|ENEEDAUTH|E404|trusted' || true
+            if ! printf '%s\n' "$out" | grep -q 'Successfully retrieved and set token'; then
+              echo "::error::OIDC exchange failed for ${pkg}"
+              printf '%s\n' "$out" | tail -80
+              echo "::endgroup::"
+              return 1
+            fi
+            echo "OIDC exchange OK for ${pkg}"
+            echo "::endgroup::"
+            return "$rc"
+          }
+          verify_oidc npm-package/main
+          verify_oidc npm-package/platform-linux-x64
+          verify_oidc npm-package/platform-win32-x64
+
+  build-platform:
+    needs: [preflight, oidc-preflight]
     strategy:
       fail-fast: false
       matrix:
@@ -95,7 +135,7 @@ jobs:
           retention-days: 7
 
   pack-main:
-    needs: preflight
+    needs: [preflight, oidc-preflight]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
