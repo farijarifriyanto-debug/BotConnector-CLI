@@ -102,7 +102,7 @@ jobs:
             fi
             echo "OIDC exchange OK for ${pkg}"
             echo "::endgroup::"
-            return "$rc"
+            return 0
           }
           failures=0
           verify_oidc npm-package/main || failures=1
