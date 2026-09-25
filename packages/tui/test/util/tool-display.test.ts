@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { toolDisplayMetadata, webSearchProviderLabel } from "../../src/util/tool-display"
+import { isInternalTranscriptTool, toolDisplayMetadata, webSearchProviderLabel } from "../../src/util/tool-display"
 
 describe("webSearchProviderLabel", () => {
   test("labels known providers", () => {
@@ -36,5 +36,24 @@ describe("toolDisplayMetadata", () => {
     expect(toolDisplayMetadata({ status: "completed", structured: null })).toEqual({})
     expect(toolDisplayMetadata({ status: "completed", structured: [] })).toEqual({})
     expect(toolDisplayMetadata(undefined)).toEqual({})
+  })
+})
+
+
+describe("isInternalTranscriptTool", () => {
+  test("hides web activity from the main transcript", () => {
+    expect(isInternalTranscriptTool("webfetch")).toBe(true)
+    expect(isInternalTranscriptTool("websearch")).toBe(true)
+    expect(isInternalTranscriptTool("WebFetch")).toBe(true)
+    expect(isInternalTranscriptTool("WebSearch")).toBe(true)
+  })
+
+  test("keeps user-relevant coding tools visible", () => {
+    expect(isInternalTranscriptTool("bash")).toBe(false)
+    expect(isInternalTranscriptTool("read")).toBe(false)
+    expect(isInternalTranscriptTool("write")).toBe(false)
+    expect(isInternalTranscriptTool("edit")).toBe(false)
+    expect(isInternalTranscriptTool("task")).toBe(false)
+    expect(isInternalTranscriptTool(undefined)).toBe(false)
   })
 })

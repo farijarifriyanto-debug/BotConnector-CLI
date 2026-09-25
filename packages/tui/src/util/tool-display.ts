@@ -1,3 +1,9 @@
+const internalTranscriptTools = new Set(["webfetch", "websearch"])
+
+export function isInternalTranscriptTool(tool: unknown) {
+  return typeof tool === "string" && internalTranscriptTools.has(tool.toLowerCase())
+}
+
 export function webSearchProviderLabel(provider: unknown) {
   if (provider === "parallel") return "Parallel Web Search"
   if (provider === "exa") return "Exa Web Search"
