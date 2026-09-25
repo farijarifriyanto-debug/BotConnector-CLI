@@ -8,6 +8,11 @@ on:
         required: true
         default: "0.1.5"
         type: string
+      reuse_run_id:
+        description: "Optional prior npm-publish run ID whose verified artifacts should be reused"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -41,6 +46,27 @@ jobs:
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-linux-x64']")" = "$V"
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-win32-x64']")" = "$V"
           npm --version
+      - name: Validate reused artifacts
+        if: ${{ inputs.reuse_run_id != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ID="${{ inputs.reuse_run_id }}"
+          OLD_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" --jq '.head_sha')
+          test -n "$OLD_SHA"
+          BAD_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${OLD_SHA}...${GITHUB_SHA}" --jq '.files[].filename' | grep -v '^\.github/workflows/' || true)
+          if [ -n "$BAD_FILES" ]; then
+            echo "::error::Refusing to reuse artifacts because product files changed:"
+            printf '%s\n' "$BAD_FILES"
+            exit 1
+          fi
+          for NAME in npm-main npm-linux-x64 npm-win32-x64; do
+            COUNT=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq "[.artifacts[] | select(.name == \"$NAME\" and .expired == false)] | length")
+            test "$COUNT" = "1"
+          done
+          echo "Reuse run ${RUN_ID} verified: only workflow files changed and all npm artifacts are present."
 
   oidc-preflight:
     needs: preflight
@@ -86,6 +112,7 @@ jobs:
 
   build-platform:
     needs: [preflight, oidc-preflight]
+    if: ${{ inputs.reuse_run_id == '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -138,6 +165,7 @@ jobs:
 
   pack-main:
     needs: [preflight, oidc-preflight]
+    if: ${{ inputs.reuse_run_id == '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -158,7 +186,8 @@ jobs:
           retention-days: 7
 
   publish-platforms:
-    needs: [build-platform, pack-main]
+    needs: [oidc-preflight, build-platform, pack-main]
+    if: ${{ always() && needs.oidc-preflight.result == 'success' && ((inputs.reuse_run_id != '') || (needs.build-platform.result == 'success' && needs.pack-main.result == 'success')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -171,10 +200,14 @@ jobs:
         with:
           name: npm-linux-x64
           path: artifacts/linux
+          run-id: ${{ inputs.reuse_run_id || github.run_id }}
+          github-token: ${{ github.token }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: npm-win32-x64
           path: artifacts/windows
+          run-id: ${{ inputs.reuse_run_id || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Publish platform packages with npm trusted publishing
         shell: bash
         run: |
@@ -207,6 +240,8 @@ jobs:
         with:
           name: npm-main
           path: artifacts/main
+          run-id: ${{ inputs.reuse_run_id || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Publish botconnector-cli with npm trusted publishing
         shell: bash
         run: |
