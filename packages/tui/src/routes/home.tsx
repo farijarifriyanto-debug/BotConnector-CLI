@@ -1,6 +1,5 @@
 import { Prompt, type PromptRef } from "../component/prompt"
 import { createEffect, createMemo, createSignal, onMount } from "solid-js"
-import { Logo } from "../component/logo"
 import { useSync } from "../context/sync"
 import { Toast } from "../ui/toast"
 import { useArgs } from "../context/args"
@@ -39,6 +38,10 @@ export function Home() {
   const activeModel = createMemo(() => local.model.parsed())
   const connectionLabel = createMemo(() =>
     activeModel().provider.toLowerCase().includes("ollama") ? "LOCAL" : "CLOUD",
+  )
+  const cloudReady = createMemo(() => sync.data.provider.some((provider) => provider.id === "botconnector"))
+  const localReady = createMemo(() =>
+    sync.data.provider.some((provider) => provider.id === "ollama" && Object.keys(provider.models).length > 0),
   )
   const promptMaxWidth = createMemo(() => {
     const configured = tuiConfig.prompt?.max_width
@@ -79,31 +82,45 @@ export function Home() {
 
   return (
     <HomeSessionDestinationProvider>
-      <box flexGrow={1} alignItems="center" paddingLeft={2} paddingRight={2}>
-        <box flexGrow={1} minHeight={0} />
-        <box height={4} minHeight={0} flexShrink={1} />
-        <box flexShrink={0}>
-          <pluginRuntime.Slot name="home_logo" mode="replace">
-            <Logo />
-          </pluginRuntime.Slot>
-        </box>
-        <box height={1} minHeight={0} flexShrink={1} />
-        <box flexDirection="column" alignItems="center" flexShrink={0}>
-          <text fg={theme.primary}>BOTCONNECTOR // CLOUD + LOCAL AI ROUTER</text>
-          <box flexDirection="row" gap={1}>
-            <text fg={connectionLabel() === "LOCAL" ? theme.success : theme.info}>[{connectionLabel()}]</text>
-            <text fg={theme.text}>{activeModel().model}</text>
-            <text fg={theme.textMuted}>· {activeModel().provider}</text>
+      <box flexGrow={1} width="100%" paddingLeft={2} paddingRight={2} paddingTop={1}>
+        <box flexDirection="row" width="100%" flexShrink={0}>
+          <box flexDirection="column" flexGrow={1}>
+            <text fg={theme.primary}>BOTCONNECTOR</text>
+            <text fg={theme.textMuted}>CLOUD + LOCAL AI ROUTER</text>
+          </box>
+          <box flexDirection="row" gap={3} alignItems="center" flexShrink={0}>
+            <box flexDirection="column">
+              <text fg={theme.text}>Cloud</text>
+              <text fg={cloudReady() ? theme.success : theme.textMuted}>● {cloudReady() ? "Ready" : "Unavailable"}</text>
+            </box>
+            <box flexDirection="column">
+              <text fg={theme.text}>Local</text>
+              <text fg={localReady() ? theme.success : theme.textMuted}>● {localReady() ? "Ready" : "Not detected"}</text>
+            </box>
+            <box flexDirection="column">
+              <text fg={theme.text}>Router</text>
+              <text fg={theme.primary}>● Active</text>
+            </box>
           </box>
         </box>
-        <box height={1} minHeight={0} flexShrink={1} />
-        <box width="100%" maxWidth={promptMaxWidth()} zIndex={1000} paddingTop={1} flexShrink={0}>
+
+        <box height={1} flexShrink={0} />
+        <box flexDirection="row" gap={2} flexShrink={0}>
+          <text fg={theme.textMuted}>Provider:</text>
+          <text fg={theme.text}>{activeModel().provider}</text>
+          <text fg={theme.textMuted}>│</text>
+          <text fg={theme.textMuted}>Model:</text>
+          <text fg={theme.text}>{activeModel().model}</text>
+          <text fg={connectionLabel() === "LOCAL" ? theme.success : theme.info}>[{connectionLabel()}]</text>
+        </box>
+
+        <box flexGrow={1} minHeight={2} />
+
+        <box width="100%" zIndex={1000} paddingBottom={1} flexShrink={0}>
           <pluginRuntime.Slot name="home_prompt" mode="replace" ref={bind}>
             <Prompt ref={bind} right={<pluginRuntime.Slot name="home_prompt_right" />} placeholders={placeholder} />
           </pluginRuntime.Slot>
         </box>
-        <pluginRuntime.Slot name="home_bottom" />
-        <box flexGrow={1} minHeight={0} />
         <Toast />
       </box>
       <box width="100%" flexShrink={0}>
