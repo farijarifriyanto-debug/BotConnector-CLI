@@ -89,6 +89,18 @@ if (!footer.includes('provider.id === "ollama"') || !footer.includes('"Local"'))
   fail("TUI model selector does not identify Ollama as Local")
 }
 
+const tuiLocal = read("packages/tui/src/context/local.tsx")
+if (!tuiLocal.includes('!providerID.startsWith("opencode")')) {
+  fail("TUI model state does not reject upstream OpenCode providers")
+}
+if (!tuiLocal.includes('item.id === "botconnector"') || !tuiLocal.includes('item.id === "ollama"')) {
+  fail("TUI fallback does not prioritize BotConnector then Ollama")
+}
+const tuiModelDialog = read("packages/tui/src/component/dialog-model.tsx")
+if (!tuiModelDialog.includes('!provider.id.startsWith("opencode")')) {
+  fail("TUI model dialog still exposes upstream OpenCode providers")
+}
+
 const acp = read("packages/opencode/src/acp/service.ts")
 if (acp.includes('providers[ProviderV2.ID.make("opencode")]')) {
   fail("ACP startup can still default to the OpenCode/Zen provider")

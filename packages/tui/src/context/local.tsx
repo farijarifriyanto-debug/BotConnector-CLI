@@ -61,7 +61,12 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     const event = useEvent()
     const permission = usePermission()
 
+    function isBotConnectorVisibleProvider(providerID: string) {
+      return !providerID.startsWith("opencode")
+    }
+
     function isModelValid(model: { providerID: string; modelID: string }) {
+      if (!isBotConnectorVisibleProvider(model.providerID)) return false
       const provider = sync.data.provider.find((item) => item.id === model.providerID)
       return !!provider?.models[model.modelID]
     }
@@ -183,10 +188,42 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         .then((x) => {
           if (!x || typeof x !== "object") return
           const value = x as Record<string, unknown>
-          if (Array.isArray(value.recent)) setModelStore("recent", value.recent)
-          if (Array.isArray(value.favorite)) setModelStore("favorite", value.favorite)
-          if (typeof value.variant === "object" && value.variant !== null)
-            setModelStore("variant", value.variant as Record<string, string | undefined>)
+          if (Array.isArray(value.recent)) {
+            setModelStore(
+              "recent",
+              value.recent.filter(
+                (item): item is { providerID: string; modelID: string } =>
+                  !!item &&
+                  typeof item === "object" &&
+                  typeof (item as { providerID?: unknown }).providerID === "string" &&
+                  typeof (item as { modelID?: unknown }).modelID === "string" &&
+                  isBotConnectorVisibleProvider((item as { providerID: string }).providerID),
+              ),
+            )
+          }
+          if (Array.isArray(value.favorite)) {
+            setModelStore(
+              "favorite",
+              value.favorite.filter(
+                (item): item is { providerID: string; modelID: string } =>
+                  !!item &&
+                  typeof item === "object" &&
+                  typeof (item as { providerID?: unknown }).providerID === "string" &&
+                  typeof (item as { modelID?: unknown }).modelID === "string" &&
+                  isBotConnectorVisibleProvider((item as { providerID: string }).providerID),
+              ),
+            )
+          }
+          if (typeof value.variant === "object" && value.variant !== null) {
+            setModelStore(
+              "variant",
+              Object.fromEntries(
+                Object.entries(value.variant as Record<string, string | undefined>).filter(
+                  ([key]) => !key.startsWith("opencode/"),
+                ),
+              ),
+            )
+          }
         })
         .catch(() => {})
         .finally(() => {
@@ -221,7 +258,10 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           }
         }
 
-        const provider = sync.data.provider[0]
+        const provider =
+          sync.data.provider.find((item) => item.id === "botconnector") ??
+          sync.data.provider.find((item) => item.id === "ollama") ??
+          sync.data.provider.find((item) => isBotConnectorVisibleProvider(item.id))
         if (!provider) return undefined
         const defaultModel = sync.data.provider_default[provider.id]
         const firstModel = Object.values(provider.models)[0]
