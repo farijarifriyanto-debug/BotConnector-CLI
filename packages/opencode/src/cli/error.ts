@@ -1,5 +1,4 @@
 import { NamedError } from "@opencode-ai/core/util/error"
-import { errorFormat } from "@/util/error"
 import { isRecord } from "@/util/record"
 
 type ConfigIssue = { message: string; path: string[] }
@@ -47,7 +46,7 @@ export function FormatError(input: unknown): string | undefined {
   // MCPFailed: { name: string }
   if (NamedError.hasName(input, "MCPFailed")) {
     const data = isRecord(input) && isRecord(input.data) ? stringField(input.data, "name") : undefined
-    return `MCP server "${data}" failed. Note, opencode does not support MCP authentication yet.`
+    return `MCP server "${data}" failed. Run \`botconnector mcp list\` to check its configured status.`
   }
 
   // AccountServiceError, AccountTransportError: TaggedErrorClass
@@ -126,5 +125,14 @@ export function FormatError(input: unknown): string | undefined {
 }
 
 export function FormatUnknownError(input: unknown): string {
-  return errorFormat(input)
+  if (input instanceof Error && input.message.trim()) return input.message
+  if (isRecord(input)) {
+    const message = stringField(input, "message")
+    if (message) return message
+    if (isRecord(input.data)) {
+      const nested = stringField(input.data, "message")
+      if (nested) return nested
+    }
+  }
+  return "Unexpected BotConnector error. Re-run with --print-logs for diagnostics."
 }

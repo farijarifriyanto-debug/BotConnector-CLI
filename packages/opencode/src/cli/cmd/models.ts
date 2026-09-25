@@ -53,13 +53,15 @@ export const ModelsCommand = effectCmd({
       return
     }
 
-    const ids = Object.keys(providers).sort((a, b) => {
-      const aIsOpencode = a.startsWith("opencode")
-      const bIsOpencode = b.startsWith("opencode")
-      if (aIsOpencode && !bIsOpencode) return -1
-      if (!aIsOpencode && bIsOpencode) return 1
-      return a.localeCompare(b)
-    })
+    const ids = Object.keys(providers)
+      .filter((id) => !id.startsWith("opencode"))
+      .sort((a, b) => {
+        if (a === "botconnector" && b !== "botconnector") return -1
+        if (a !== "botconnector" && b === "botconnector") return 1
+        if (a === "ollama" && b !== "ollama") return -1
+        if (a !== "ollama" && b === "ollama") return 1
+        return a.localeCompare(b)
+      })
 
     for (const providerID of ids) print(ProviderV2.ID.make(providerID), args.verbose)
   }),

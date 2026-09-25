@@ -70,6 +70,44 @@ function migrateDefaultConfig() {
       changed = true
     }
 
+    // Older generated configs could contain an empty Gateway model map.
+    // Add only missing canonical models from the bundled default so custom
+    // user models and overrides remain untouched.
+    const bundledPath = path.join(__dirname, "..", "default-config", "botconnector-cloud.jsonc")
+    if (fs.existsSync(bundledPath)) {
+      const bundled = JSON.parse(fs.readFileSync(bundledPath, "utf8"))
+      const canonicalModels = bundled?.provider?.botconnector?.models
+      if (canonicalModels && typeof canonicalModels === "object") {
+        provider.models ??= {}
+        for (const [modelID, model] of Object.entries(canonicalModels)) {
+          if (provider.models[modelID] !== undefined) continue
+          provider.models[modelID] = model
+          changed = true
+        }
+      }
+    }
+
+    config.permission ??= {}
+    if (config.permission.edit === undefined) {
+      config.permission.edit = "ask"
+      changed = true
+    }
+    if (config.permission.bash === undefined) {
+      config.permission.bash = "ask"
+      changed = true
+    }
+
+    config.provider ??= {}
+    if (!config.provider.ollama) {
+      config.provider.ollama = {
+        npm: "@ai-sdk/openai-compatible",
+        name: "Ollama Local",
+        options: { baseURL: "http://127.0.0.1:11434/v1" },
+        models: {},
+      }
+      changed = true
+    }
+
     if (changed) fs.writeFileSync(dest, JSON.stringify(config, null, 2) + "\n")
   } catch {
     // Never block the CLI for a best-effort migration. JSONC/user-customized
@@ -103,9 +141,26 @@ migrateDefaultConfig()
 
 const binPath = resolveBinary()
 const env = { ...process.env }
+
+// BotConnector owns config resolution. Legacy OpenCode config variables from
+// older installs must never silently override BotConnector's canonical config.
+delete env.OPENCODE_CONFIG
+delete env.OPENCODE_CONFIG_DIR
+delete env.OPENCODE_CONFIG_CONTENT
+
 if (!env.BOTCONNECTOR_CONFIG && seededConfig && fs.existsSync(seededConfig)) {
   env.BOTCONNECTOR_CONFIG = seededConfig
 }
+
+// Canonical BotConnector server envs. Legacy aliases are only an internal
+// compatibility bridge for the embedded runtime.
+if (env.BOTCONNECTOR_SERVER_USERNAME && !env.OPENCODE_SERVER_USERNAME) {
+  env.OPENCODE_SERVER_USERNAME = env.BOTCONNECTOR_SERVER_USERNAME
+}
+if (env.BOTCONNECTOR_SERVER_PASSWORD && !env.OPENCODE_SERVER_PASSWORD) {
+  env.OPENCODE_SERVER_PASSWORD = env.BOTCONNECTOR_SERVER_PASSWORD
+}
+
 const result = spawnSync(binPath, process.argv.slice(2), { stdio: "inherit", env })
 
 if (result.error) {

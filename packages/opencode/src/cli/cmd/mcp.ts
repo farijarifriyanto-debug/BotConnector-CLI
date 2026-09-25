@@ -118,7 +118,8 @@ export const McpListCommand = effectCmd({
     const servers = configuredServers(config)
 
     if (servers.length === 0) {
-      prompts.log.warn("No MCP servers configured")
+      prompts.log.warn("No MCP servers are configured in BotConnector")
+      prompts.log.info("A separately running MCP process is not registered until it is added to BotConnector.")
       prompts.outro("Add servers with: botconnector mcp add")
       return
     }

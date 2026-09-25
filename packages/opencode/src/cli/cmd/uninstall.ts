@@ -129,13 +129,13 @@ async function showRemovalSummary(targets: RemovalTargets, method: Installation.
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string> = {
-      npm: "npm uninstall -g opencode-ai",
-      pnpm: "pnpm uninstall -g opencode-ai",
-      bun: "bun remove -g opencode-ai",
-      yarn: "yarn global remove opencode-ai",
-      brew: "brew uninstall opencode",
-      choco: "choco uninstall opencode",
-      scoop: "scoop uninstall opencode",
+      npm: "npm uninstall -g botconnector-cli",
+      pnpm: "pnpm uninstall -g botconnector-cli",
+      bun: "bun remove -g botconnector-cli",
+      yarn: "yarn global remove botconnector-cli",
+      brew: "brew uninstall botconnector",
+      choco: "choco uninstall botconnector",
+      scoop: "scoop uninstall botconnector",
     }
     prompts.log.info(`  ✓ Package: ${cmds[method] || method}`)
   }
@@ -192,7 +192,7 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
     const cmd = cmds[method]
     if (cmd) {
       spinner.start(`Running ${cmd.join(" ")}...`)
-      const result = await Process.run(method === "choco" ? ["choco", "uninstall", "opencode", "-y", "-r"] : cmd, {
+      const result = await Process.run(method === "choco" ? ["choco", "uninstall", "botconnector", "-y", "-r"] : cmd, {
         nothrow: true,
       })
       if (result.code !== 0) {

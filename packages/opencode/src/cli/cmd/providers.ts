@@ -260,7 +260,9 @@ export const ProvidersListCommand = effectCmd({
     const homedir = os.homedir()
     const displayPath = authPath.startsWith(homedir) ? authPath.replace(homedir, "~") : authPath
     yield* Prompt.intro(`Credentials ${UI.Style.TEXT_DIM}${displayPath}`)
-    const results = Object.entries(yield* Effect.orDie(authSvc.all()))
+    const results = Object.entries(yield* Effect.orDie(authSvc.all())).filter(
+      ([providerID]) => !providerID.startsWith("opencode"),
+    )
     const database = yield* modelsDev.get()
 
     for (const [providerID, result] of results) {
@@ -273,6 +275,7 @@ export const ProvidersListCommand = effectCmd({
     const activeEnvVars: Array<{ provider: string; envVar: string }> = []
 
     for (const [providerID, provider] of Object.entries(database)) {
+      if (providerID.startsWith("opencode")) continue
       for (const envVar of provider.env) {
         if (process.env[envVar]) {
           activeEnvVars.push({
@@ -364,12 +367,12 @@ export const ProvidersLoginCommand = effectCmd({
     const allProviders = yield* modelsDev.get()
     const providers: Record<string, (typeof allProviders)[string]> = {}
     for (const [key, value] of Object.entries(allProviders)) {
+      if (key.startsWith("opencode")) continue
       if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) providers[key] = value
     }
     const hooks = yield* pluginSvc.list()
 
     const priority: Record<string, number> = {
-      opencode: 0,
       openai: 1,
       "github-copilot": 2,
       google: 3,
@@ -383,7 +386,7 @@ export const ProvidersLoginCommand = effectCmd({
       disabled,
       enabled,
       providerNames: Object.fromEntries(Object.entries(config.provider ?? {}).map(([id, p]) => [id, p.name])),
-    })
+    }).filter((x) => !x.id.startsWith("opencode"))
     const options = [
       ...pipe(
         providers,
@@ -396,7 +399,6 @@ export const ProvidersLoginCommand = effectCmd({
           label: x.name,
           value: x.id,
           hint: {
-            opencode: "recommended",
             openai: "ChatGPT Plus/Pro or API key",
           }[x.id],
         })),
@@ -463,17 +465,13 @@ export const ProvidersLoginCommand = effectCmd({
       )
     }
 
-    if (provider === "opencode") {
-      yield* Prompt.log.info("Create an api key at https://opencode.ai/auth")
-    }
-
     if (provider === "vercel") {
       yield* Prompt.log.info("You can create an api key at https://vercel.link/ai-gateway-token")
     }
 
     if (["cloudflare", "cloudflare-ai-gateway"].includes(provider)) {
       yield* Prompt.log.info(
-        "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway",
+        "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables.",
       )
     }
 

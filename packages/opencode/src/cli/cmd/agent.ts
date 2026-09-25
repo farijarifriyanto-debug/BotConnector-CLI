@@ -30,6 +30,8 @@ const AVAILABLE_PERMISSIONS = [
   "skill",
 ]
 
+const SAFE_DEFAULT_PERMISSIONS = ["read", "glob", "grep", "todowrite", "skill"]
+
 const AgentCreateCommand = effectCmd({
   command: "create",
   describe: "create a new agent",
@@ -51,7 +53,7 @@ const AgentCreateCommand = effectCmd({
       .option("permissions", {
         type: "string",
         alias: ["tools"],
-        describe: `comma-separated list of permissions to allow (default: all). Available: "${AVAILABLE_PERMISSIONS.join(", ")}"`,
+        describe: `comma-separated permissions to allow. Safe default: "${SAFE_DEFAULT_PERMISSIONS.join(", ")}". Available: "${AVAILABLE_PERMISSIONS.join(", ")}"`,
       })
       .option("model", {
         type: "string",
@@ -139,7 +141,7 @@ const AgentCreateCommand = effectCmd({
       // Select permissions to allow
       let selected: string[]
       if (perms !== undefined) {
-        selected = perms ? perms.split(",").map((t) => t.trim()) : AVAILABLE_PERMISSIONS
+        selected = perms ? perms.split(",").map((t) => t.trim()) : SAFE_DEFAULT_PERMISSIONS
       } else {
         const result = await prompts.multiselect({
           message: "Select permissions to allow (Space to toggle)",
@@ -147,7 +149,7 @@ const AgentCreateCommand = effectCmd({
             label: permission,
             value: permission,
           })),
-          initialValues: AVAILABLE_PERMISSIONS,
+          initialValues: SAFE_DEFAULT_PERMISSIONS,
         })
         if (prompts.isCancel(result)) throw new UI.CancelledError()
         selected = result
