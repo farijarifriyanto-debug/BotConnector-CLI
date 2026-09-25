@@ -115,7 +115,7 @@ if (!homeRoute.includes("CLOUD + LOCAL AI ROUTER")) fail("minimal BotConnector h
 if (homeRoute.includes('name="home_bottom"')) fail("default home still renders the rotating tips/dashboard area")
 if (!sessionRoute.includes('kv.signal<"auto" | "hide">("sidebar", "hide")')) fail("session sidebar is not hidden by default")
 if (!sessionRoute.includes('return sidebarOpen()')) fail("wide terminals can still auto-open the session sidebar")
-if (!sessionRoute.includes('kv.signal("assistant_metadata_visibility", false)')) fail("assistant metadata is still noisy by default")
+if (!sessionRoute.includes('kv.signal("assistant_metadata_visibility", true)')) fail("assistant activity metadata is not visible by default")
 
 const promptComponent = read("packages/tui/src/component/prompt/index.tsx")
 if (!promptComponent.includes("Ask BotConnector…")) {
