@@ -35,6 +35,20 @@ describe("providerOptions", () => {
     })
   })
 
+  test("hides upstream OpenCode providers from the BotConnector picker", () => {
+    const values = providerOptions([
+      { id: "botconnector", name: "BotConnector Gateway" },
+      { id: "opencode", name: "OpenCode Zen" },
+      { id: "opencode-go", name: "OpenCode Go" },
+      { id: "openai", name: "OpenAI" },
+    ]).map((option) => option.value)
+
+    expect(values).toContain("botconnector")
+    expect(values).toContain("openai")
+    expect(values).not.toContain("opencode")
+    expect(values).not.toContain("opencode-go")
+  })
+
   test("does not collide with a configured provider named other", () => {
     const values = providerOptions([{ id: "other", name: "Other Provider" }]).map((option) => option.value)
     expect(new Set(values).size).toBe(values.length)
