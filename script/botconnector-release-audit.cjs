@@ -89,6 +89,14 @@ if (!footer.includes('provider.id === "ollama"') || !footer.includes('"Local"'))
   fail("TUI model selector does not identify Ollama as Local")
 }
 
+const providerSource = read("packages/opencode/src/provider/provider.ts")
+if (!providerSource.includes('(providerID === "botconnector" ? 32_768 : 0)')) {
+  fail("BotConnector Gateway models without metadata have no bounded context fallback")
+}
+if (!providerSource.includes('(providerID === "botconnector" ? 8_192 : 0)')) {
+  fail("BotConnector Gateway models without metadata have no bounded output fallback")
+}
+
 const tuiLocal = read("packages/tui/src/context/local.tsx")
 if (!tuiLocal.includes('!providerID.startsWith("opencode")')) {
   fail("TUI model state does not reject upstream OpenCode providers")

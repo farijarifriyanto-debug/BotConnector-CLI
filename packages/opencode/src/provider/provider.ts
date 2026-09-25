@@ -1556,9 +1556,15 @@ const layer = Layer.effect(
               },
               options: mergeDeep(existingModel?.options ?? {}, model.options ?? {}),
               limit: {
-                context: model.limit?.context ?? existingModel?.limit?.context ?? 0,
+                context:
+                  model.limit?.context ??
+                  existingModel?.limit?.context ??
+                  (providerID === "botconnector" ? 32_768 : 0),
                 input: model.limit?.input ?? existingModel?.limit?.input,
-                output: model.limit?.output ?? existingModel?.limit?.output ?? 0,
+                output:
+                  model.limit?.output ??
+                  existingModel?.limit?.output ??
+                  (providerID === "botconnector" ? 8_192 : 0),
               },
               headers: mergeDeep(existingModel?.headers ?? {}, model.headers ?? {}),
               family: model.family ?? existingModel?.family ?? "",
