@@ -289,6 +289,43 @@ async function check(map: (dir: string) => string) {
   }
 }
 
+it.effect("loads BotConnector gateway seed before user global config", () =>
+  withGlobalConfig({}, ({ dir }) =>
+    Effect.gen(function* () {
+      yield* writeConfigEffect(
+        dir,
+        {
+          provider: {
+            botconnector: {
+              npm: "@ai-sdk/openai-compatible",
+              name: "Seed Gateway",
+              options: { baseURL: "https://api.botconnector.id/v1" },
+              models: { "seed-model": { name: "Seed Model" } },
+            },
+          },
+        },
+        "botconnector-cloud.jsonc",
+      )
+      yield* writeConfigEffect(
+        dir,
+        {
+          provider: {
+            botconnector: {
+              name: "User Gateway",
+            },
+          },
+        },
+        "botconnector.jsonc",
+      )
+
+      const config = yield* Config.use.get().pipe(provideInstanceEffect(dir))
+      expect(config.provider?.botconnector?.name).toBe("User Gateway")
+      expect(config.provider?.botconnector?.models?.["seed-model"]?.name).toBe("Seed Model")
+      expect(config.provider?.botconnector?.options?.baseURL).toBe("https://api.botconnector.id/v1")
+    }).pipe(Effect.provide(testInstanceStoreLayer), Effect.provide(LayerNode.compile(CrossSpawnSpawner.node))),
+  ),
+)
+
 it.instance("loads config with defaults when no files exist", () =>
   Effect.gen(function* () {
     const config = yield* Config.use.get()

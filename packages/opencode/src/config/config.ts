@@ -264,6 +264,7 @@ const layer = Layer.effect(
             .pipe(Effect.catch(() => Effect.void))
         }
       }
+      result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "botconnector-cloud.jsonc"), env))
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "config.json"), env))
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "botconnector.json"), env))
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "botconnector.jsonc"), env))
