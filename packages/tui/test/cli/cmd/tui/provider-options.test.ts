@@ -18,12 +18,21 @@ describe("providerOptions", () => {
     expect(
       providerOptions([
         { id: "openai", name: "OpenAI" },
+        { id: "botconnector", name: "BotConnector Gateway" },
         { id: "custom-z", name: "Zebra Provider" },
         { id: "anthropic", name: "Anthropic" },
         { id: "mistral", name: "Mistral" },
         { id: "aws", name: "AWS Bedrock" },
       ]).map((option) => option.value),
-    ).toEqual(["openai", "anthropic", "aws", "mistral", "custom-z", "__opencode_custom_provider__"])
+    ).toEqual(["botconnector", "openai", "anthropic", "aws", "mistral", "custom-z", "__opencode_custom_provider__"])
+  })
+
+  test("labels BotConnector Gateway as the recommended one-key provider", () => {
+    expect(providerOptions([{ id: "botconnector", name: "BotConnector Gateway" }])[0]).toMatchObject({
+      title: "BotConnector Gateway",
+      description: "(Recommended · one API key)",
+      category: "Popular",
+    })
   })
 
   test("does not collide with a configured provider named other", () => {
