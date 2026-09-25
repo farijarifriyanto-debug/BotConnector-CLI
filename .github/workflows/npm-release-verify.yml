@@ -27,6 +27,17 @@ jobs:
           test "$(node -p "require('./npm-package/platform-win32-x64/package.json').version")" = "$V"
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-linux-x64']")" = "$V"
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-win32-x64']")" = "$V"
+          node - <<'NODE'
+          const fs = require("fs")
+          const cfg = JSON.parse(fs.readFileSync("npm-package/main/default-config/botconnector-cloud.jsonc", "utf8"))
+          const gateway = cfg.provider?.botconnector
+          if (gateway?.name !== "BotConnector Gateway") throw new Error("BotConnector Gateway name missing")
+          if (gateway?.options?.baseURL !== "https://api.botconnector.id/v1") throw new Error("BotConnector Gateway URL mismatch")
+          if (gateway?.options?.apiKey !== undefined) throw new Error("Bundled config must not hard-code apiKey")
+          if (!Array.isArray(gateway?.env) || !gateway.env.includes("BOTCONNECTOR_API_KEY")) {
+            throw new Error("BOTCONNECTOR_API_KEY env fallback missing")
+          }
+          NODE
 
   pack-main:
     needs: verify-metadata
@@ -134,5 +145,52 @@ jobs:
           cd smoke
           npm init -y >/dev/null
           npm install --ignore-scripts ../artifacts/platform/*.tgz ../artifacts/main/*.tgz
-          npx --no-install botconnector --version
+
+          # Simulate an existing v0.1.5 install so the npm launcher must
+          # migrate the old generated gateway config before starting.
+          RAW_HOME="$PWD/migration-home"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            TEST_HOME=$(cygpath -w "$RAW_HOME")
+          else
+            TEST_HOME="$RAW_HOME"
+          fi
+          export HOME="$TEST_HOME"
+          export USERPROFILE="$TEST_HOME"
+          export BOTCONNECTOR_MIGRATION_TEST_HOME="$TEST_HOME"
+
+          node - <<'NODE'
+          const fs = require("fs")
+          const path = require("path")
+          const home = process.env.BOTCONNECTOR_MIGRATION_TEST_HOME
+          const dir = path.join(home, ".config", "botconnector")
+          fs.mkdirSync(dir, { recursive: true })
+          fs.writeFileSync(
+            path.join(dir, "botconnector-cloud.jsonc"),
+            JSON.stringify({
+              provider: {
+                botconnector: {
+                  npm: "@ai-sdk/openai-compatible",
+                  name: "BotConnector Cloud",
+                  options: {
+                    baseURL: "https://api.botconnector.id/v1",
+                    apiKey: "{env:BOTCONNECTOR_API_KEY}"
+                  },
+                  models: {}
+                }
+              }
+            }, null, 2) + "\n"
+          )
+          NODE
+
           test "$(npx --no-install botconnector --version)" = "${{ inputs.version }}"
+
+          node - <<'NODE'
+          const fs = require("fs")
+          const path = require("path")
+          const home = process.env.BOTCONNECTOR_MIGRATION_TEST_HOME
+          const cfg = JSON.parse(fs.readFileSync(path.join(home, ".config", "botconnector", "botconnector-cloud.jsonc"), "utf8"))
+          const gateway = cfg.provider.botconnector
+          if (gateway.name !== "BotConnector Gateway") throw new Error("legacy gateway name was not migrated")
+          if (gateway.options.apiKey !== undefined) throw new Error("legacy apiKey placeholder was not removed")
+          if (!gateway.env?.includes("BOTCONNECTOR_API_KEY")) throw new Error("gateway env fallback was not migrated")
+          NODE

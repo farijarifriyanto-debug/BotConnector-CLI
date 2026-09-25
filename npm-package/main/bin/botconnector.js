@@ -15,11 +15,10 @@ const PLATFORM_PACKAGES = {
   linux: { pkg: "botconnector-cli-linux-x64", binName: "botconnector" },
 }
 
-// Seed the "BotConnector Cloud" provider config on first run. opencode has
-// no concept of a package-bundled default config -- everything comes from
-// ~/.config/opencode/*.jsonc -- so this copies our bundled file there once
-// if it doesn't already exist. Never overwrites a file the user may have
-// edited, and never fails the CLI launch if this can't be done.
+// Seed the BotConnector Gateway provider config on first run. BotConnector
+// keeps its own config under ~/.config/botconnector. The seed is copied once;
+// a narrow migration below only updates fields that exactly match our old
+// generated defaults, preserving user changes.
 function seedDefaultConfig() {
   try {
     const configDir = path.join(os.homedir(), ".config", "botconnector")
@@ -31,6 +30,47 @@ function seedDefaultConfig() {
     fs.copyFileSync(src, dest)
   } catch {
     // best-effort only
+  }
+}
+
+function migrateDefaultConfig() {
+  try {
+    const dest = path.join(os.homedir(), ".config", "botconnector", "botconnector-cloud.jsonc")
+    if (!fs.existsSync(dest)) return
+
+    const raw = fs.readFileSync(dest, "utf8")
+    const config = JSON.parse(raw)
+    const provider = config?.provider?.botconnector
+    if (!provider || typeof provider !== "object") return
+
+    let changed = false
+    if (provider.name === "BotConnector Cloud") {
+      provider.name = "BotConnector Gateway"
+      changed = true
+    }
+
+    const options = provider.options
+    if (
+      options &&
+      typeof options === "object" &&
+      options.apiKey === "{env:BOTCONNECTOR_API_KEY}"
+    ) {
+      delete options.apiKey
+      changed = true
+    }
+
+    if (!Array.isArray(provider.env)) {
+      provider.env = ["BOTCONNECTOR_API_KEY"]
+      changed = true
+    } else if (!provider.env.includes("BOTCONNECTOR_API_KEY")) {
+      provider.env.push("BOTCONNECTOR_API_KEY")
+      changed = true
+    }
+
+    if (changed) fs.writeFileSync(dest, JSON.stringify(config, null, 2) + "\n")
+  } catch {
+    // Never block the CLI for a best-effort migration. JSONC/user-customized
+    // files that are not valid JSON are left untouched.
   }
 }
 
@@ -56,6 +96,7 @@ function resolveBinary() {
 }
 
 seedDefaultConfig()
+migrateDefaultConfig()
 
 const binPath = resolveBinary()
 const result = spawnSync(binPath, process.argv.slice(2), { stdio: "inherit" })
