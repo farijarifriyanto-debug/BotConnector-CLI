@@ -804,14 +804,24 @@ function defaultModelFromConfig(
   const configured = configuredModel ? Provider.parseModel(configuredModel) : undefined
   if (configured && providers[configured.providerID]?.models[configured.modelID]) return configured
 
-  // First-session ACP startup must not scan historical sessions just to infer
-  // a default. Configured model, opencode provider, then sorted best model keep
-  // the protocol response deterministic without extra session/message reads.
-  const opencodeProvider = providers[ProviderV2.ID.make("opencode")]
-  const opencodeModel = opencodeProvider ? Provider.sort(Object.values(opencodeProvider.models))[0] : undefined
-  if (opencodeProvider && opencodeModel) return { providerID: opencodeProvider.id, modelID: opencodeModel.id }
+  // First-session ACP startup must stay inside BotConnector-owned providers.
+  // Never fall back to the upstream OpenCode/Zen provider simply because it is
+  // present in the embedded provider catalog.
+  const botconnectorProvider = providers[ProviderV2.ID.make("botconnector")]
+  const botconnectorModel = botconnectorProvider ? Provider.sort(Object.values(botconnectorProvider.models))[0] : undefined
+  if (botconnectorProvider && botconnectorModel) {
+    return { providerID: botconnectorProvider.id, modelID: botconnectorModel.id }
+  }
 
-  const best = Provider.sort(Object.values(providers).flatMap((provider) => Object.values(provider.models)))[0]
+  const ollamaProvider = providers[ProviderV2.ID.make("ollama")]
+  const ollamaModel = ollamaProvider ? Provider.sort(Object.values(ollamaProvider.models))[0] : undefined
+  if (ollamaProvider && ollamaModel) return { providerID: ollamaProvider.id, modelID: ollamaModel.id }
+
+  const best = Provider.sort(
+    Object.entries(providers)
+      .filter(([providerID]) => !providerID.startsWith("opencode"))
+      .flatMap(([, provider]) => Object.values(provider.models)),
+  )[0]
   if (best) return { providerID: best.providerID, modelID: best.id }
   if (configured) return configured
 }

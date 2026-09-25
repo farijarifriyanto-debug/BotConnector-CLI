@@ -89,6 +89,17 @@ if (!footer.includes('provider.id === "ollama"') || !footer.includes('"Local"'))
   fail("TUI model selector does not identify Ollama as Local")
 }
 
+const acp = read("packages/opencode/src/acp/service.ts")
+if (acp.includes('providers[ProviderV2.ID.make("opencode")]')) {
+  fail("ACP startup can still default to the OpenCode/Zen provider")
+}
+if (!acp.includes('providers[ProviderV2.ID.make("botconnector")]')) {
+  fail("ACP startup does not prefer the BotConnector provider")
+}
+if (!acp.includes('.filter(([providerID]) => !providerID.startsWith("opencode"))')) {
+  fail("ACP fallback model selection does not exclude upstream OpenCode providers")
+}
+
 const readTool = read("packages/opencode/src/tool/read.ts")
 if (readTool.includes('output += `\\n\\n<system-reminder>')) {
   fail("Read tool still appends internal instruction content to user-visible output")
