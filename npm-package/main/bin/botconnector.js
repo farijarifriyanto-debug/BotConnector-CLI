@@ -22,7 +22,7 @@ const PLATFORM_PACKAGES = {
 // edited, and never fails the CLI launch if this can't be done.
 function seedDefaultConfig() {
   try {
-    const configDir = path.join(os.homedir(), ".config", "opencode")
+    const configDir = path.join(os.homedir(), ".config", "botconnector")
     const dest = path.join(configDir, "botconnector-cloud.jsonc")
     if (fs.existsSync(dest)) return
     const src = path.join(__dirname, "..", "default-config", "botconnector-cloud.jsonc")
