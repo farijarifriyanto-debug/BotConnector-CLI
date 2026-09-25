@@ -6,7 +6,7 @@ on:
       version:
         description: "npm version to publish"
         required: true
-        default: "0.1.5"
+        default: "0.1.6"
         type: string
       reuse_run_id:
         description: "Optional prior npm-publish run ID whose verified artifacts should be reused"
