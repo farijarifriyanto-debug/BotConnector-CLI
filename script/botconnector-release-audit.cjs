@@ -94,6 +94,11 @@ if (readTool.includes('output += `\\n\\n<system-reminder>')) {
   fail("Read tool still appends internal instruction content to user-visible output")
 }
 
+const agent = read("packages/opencode/src/cli/cmd/agent.ts")
+if (agent.includes("default: all")) fail("agent creation still advertises allow-all permissions")
+if (!agent.includes("SAFE_DEFAULT_PERMISSIONS")) fail("agent creation safe permission defaults missing")
+if (!agent.includes("initialValues: SAFE_DEFAULT_PERMISSIONS")) fail("interactive agent permission picker defaults to all permissions")
+
 const uninstall = read("packages/opencode/src/cli/cmd/uninstall.ts")
 for (const legacy of ["uninstall -g opencode-ai", "uninstall opencode"]) {
   if (uninstall.includes(legacy)) fail(`uninstall still targets upstream package: ${legacy}`)
