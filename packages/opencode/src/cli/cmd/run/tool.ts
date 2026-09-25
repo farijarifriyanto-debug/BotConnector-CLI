@@ -338,11 +338,10 @@ function runWrite(p: ToolProps<typeof WriteTool>): ToolInline {
   }
 }
 
-function runWebfetch(p: ToolProps<typeof WebFetchTool>): ToolInline {
-  const url = p.input.url ?? ""
+function runWebfetch(_p: ToolProps<typeof WebFetchTool>): ToolInline {
   return {
     icon: "%",
-    title: url ? `WebFetch ${url}` : "WebFetch",
+    title: "Checking source",
   }
 }
 
@@ -898,13 +897,8 @@ function scrollListStart(p: ToolProps): string {
   return `→ List ${toolPath(dir)}`
 }
 
-function scrollWebfetchStart(p: ToolProps<typeof WebFetchTool>): string {
-  const url = p.input.url ?? ""
-  if (!url) {
-    return "% WebFetch"
-  }
-
-  return `% WebFetch ${url}`
+function scrollWebfetchStart(_p: ToolProps<typeof WebFetchTool>): string {
+  return ""
 }
 
 function scrollWebSearchStart(p: ToolProps<typeof WebSearchTool>): string {
@@ -984,12 +978,11 @@ function permTask(p: ToolPermissionProps<typeof TaskTool>): ToolPermissionInfo {
   }
 }
 
-function permWebfetch(p: ToolPermissionProps<typeof WebFetchTool>): ToolPermissionInfo {
-  const url = p.input.url || ""
+function permWebfetch(_p: ToolPermissionProps<typeof WebFetchTool>): ToolPermissionInfo {
   return {
     icon: "%",
-    title: `WebFetch ${url}`,
-    lines: url ? [`URL: ${url}`] : [],
+    title: "Open web source",
+    lines: [],
   }
 }
 
