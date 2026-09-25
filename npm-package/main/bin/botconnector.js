@@ -70,6 +70,23 @@ function migrateDefaultConfig() {
       changed = true
     }
 
+    // Older generated configs could contain an empty Gateway model map.
+    // Add only missing canonical models from the bundled default so custom
+    // user models and overrides remain untouched.
+    const bundledPath = path.join(__dirname, "..", "default-config", "botconnector-cloud.jsonc")
+    if (fs.existsSync(bundledPath)) {
+      const bundled = JSON.parse(fs.readFileSync(bundledPath, "utf8"))
+      const canonicalModels = bundled?.provider?.botconnector?.models
+      if (canonicalModels && typeof canonicalModels === "object") {
+        provider.models ??= {}
+        for (const [modelID, model] of Object.entries(canonicalModels)) {
+          if (provider.models[modelID] !== undefined) continue
+          provider.models[modelID] = model
+          changed = true
+        }
+      }
+    }
+
     config.permission ??= {}
     if (config.permission.edit === undefined) {
       config.permission.edit = "ask"
