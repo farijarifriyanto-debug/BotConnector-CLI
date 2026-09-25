@@ -2,10 +2,10 @@
   "provider": {
     "botconnector": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "BotConnector Cloud",
+      "name": "BotConnector Gateway",
+      "env": ["BOTCONNECTOR_API_KEY"],
       "options": {
-        "baseURL": "https://api.botconnector.id/v1",
-        "apiKey": "{env:BOTCONNECTOR_API_KEY}"
+        "baseURL": "https://api.botconnector.id/v1"
       },
       "models": {
         "deepseek-v4.1-flash": { "name": "DeepSeek V4.1 Flash" },
