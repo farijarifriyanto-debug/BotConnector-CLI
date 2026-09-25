@@ -38,7 +38,7 @@ import type {
 } from "@opencode-ai/sdk/v2"
 import { useLocal } from "../../context/local"
 import { Locale } from "../../util/locale"
-import { webSearchProviderLabel } from "../../util/tool-display"
+import { isInternalTranscriptTool, webSearchProviderLabel } from "../../util/tool-display"
 import { Dynamic, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
 import { useSDK } from "../../context/sdk"
 import { useEditorContext } from "../../context/editor"
@@ -1712,6 +1712,7 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
 
   // Hide tool if showDetails is false and tool completed successfully
   const shouldHide = createMemo(() => {
+    if (isInternalTranscriptTool(props.part.tool)) return true
     if (ctx.showDetails()) return false
     if (props.part.state.status !== "completed") return false
     return true
