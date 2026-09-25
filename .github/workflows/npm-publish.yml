@@ -46,6 +46,27 @@ jobs:
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-linux-x64']")" = "$V"
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-win32-x64']")" = "$V"
           npm --version
+      - name: Validate reused artifacts
+        if: ${{ inputs.reuse_run_id != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ID="${{ inputs.reuse_run_id }}"
+          OLD_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" --jq '.head_sha')
+          test -n "$OLD_SHA"
+          BAD_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${OLD_SHA}...${GITHUB_SHA}" --jq '.files[].filename' | grep -v '^\.github/workflows/' || true)
+          if [ -n "$BAD_FILES" ]; then
+            echo "::error::Refusing to reuse artifacts because product files changed:"
+            printf '%s\n' "$BAD_FILES"
+            exit 1
+          fi
+          for NAME in npm-main npm-linux-x64 npm-win32-x64; do
+            COUNT=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq "[.artifacts[] | select(.name == \"$NAME\" and .expired == false)] | length")
+            test "$COUNT" = "1"
+          done
+          echo "Reuse run ${RUN_ID} verified: only workflow files changed and all npm artifacts are present."
 
   oidc-preflight:
     needs: preflight
