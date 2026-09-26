@@ -245,5 +245,28 @@ if (!issueTemplate.includes("id: botconnector-version") || issueTemplate.include
   fail("bug report template still exposes upstream product version fields")
 }
 
+const tuiMigration = read("packages/opencode/src/config/tui-migrate.ts")
+if (tuiMigration.includes("https://opencode.ai/tui.json")) fail("TUI migration writes upstream schema URLs")
+
+const tuiApp = read("packages/tui/src/app.tsx")
+if (tuiApp.includes("DialogConsoleOrg") || tuiApp.includes('"console.org.switch"')) {
+  fail("TUI still exposes inherited upstream console organization switching")
+}
+
+const accountCli = read("packages/opencode/src/cli/cmd/account.ts")
+if (!accountCli.includes('defaultConsoleUrl = "https://app.botconnector.id"')) {
+  fail("account flow default is not BotConnector")
+}
+const accountService = read("packages/opencode/src/account/account.ts")
+if (!accountService.includes('const clientId = "botconnector-cli"')) fail("account OAuth client id is not BotConnector")
+
+const shareSource = read("packages/opencode/src/share/share-next.ts")
+if (!shareSource.includes("Legacy upstream sharing endpoints are disabled in BotConnector")) {
+  fail("share path does not block legacy upstream origins")
+}
+
+const botconnectorThemeSource = read("packages/tui/src/theme/assets/botconnector.json")
+if (botconnectorThemeSource.includes("opencode.ai/theme.json")) fail("BotConnector theme still references upstream schema")
+
 if (process.exitCode) process.exit(process.exitCode)
 console.log("BOTCONNECTOR_RELEASE_AUDIT_PASS")
