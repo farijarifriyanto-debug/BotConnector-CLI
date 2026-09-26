@@ -52,8 +52,8 @@ server.listen(0, "127.0.0.1", async () => {
       }
     }, null, 2) + "\n")
 
-    const command = process.platform === "win32" ? "npx.cmd" : "npx"
-    const child = spawn(command, ["--no-install", "botconnector", "models", "botconnector"], {
+    const launcher = path.resolve("node_modules/botconnector-cli/bin/botconnector.js")
+    const child = spawn(process.execPath, [launcher, "models", "botconnector"], {
       cwd: process.cwd(),
       env: {
         ...process.env,
