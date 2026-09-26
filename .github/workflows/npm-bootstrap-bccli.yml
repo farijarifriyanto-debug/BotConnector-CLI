@@ -182,10 +182,17 @@ jobs:
           else
             npm publish "$(find artifacts/main -name '*.tgz' -type f | head -1)" --access public --provenance --tag "$TAG"
           fi
+          fresh_view() {
+            local pkg="$1"
+            local cache
+            cache=$(mktemp -d)
+            npm --cache "$cache" view "$pkg" version 2>/dev/null || true
+            rm -rf "$cache"
+          }
           for i in {1..36}; do
-            MAIN=$(npm view "@botconnector/bccli@${V}" version 2>/dev/null || true)
-            LINUX=$(npm view "bccli-linux-x64@${V}" version 2>/dev/null || true)
-            WIN=$(npm view "bccli-win32-x64@${V}" version 2>/dev/null || true)
+            MAIN=$(fresh_view "@botconnector/bccli@${V}")
+            LINUX=$(fresh_view "bccli-linux-x64@${V}")
+            WIN=$(fresh_view "bccli-win32-x64@${V}")
             if [ "$MAIN" = "$V" ] && [ "$LINUX" = "$V" ] && [ "$WIN" = "$V" ]; then
               echo "Published @botconnector/bccli@${V} and both platform packages."
               exit 0
