@@ -90,8 +90,12 @@ if (run.includes('JSON.stringify({\n                type,\n                times
 if (!run.includes('emit("error", { error: formatRunError(')) fail("JSON errors are not sanitized")
 
 const index = read("packages/opencode/src/index.ts")
-if (index.includes(".command(GithubCommand)") || index.includes(".command(ConsoleCommand)")) {
-  fail("upstream-only account/github commands are exposed in the BotConnector CLI")
+if (
+  index.includes(".command(GithubCommand)") ||
+  index.includes(".command(ConsoleCommand)") ||
+  index.includes(".command(WebCommand)")
+) {
+  fail("upstream-only or unbundled commands are exposed in the BotConnector CLI")
 }
 
 const footer = read("packages/opencode/src/cli/cmd/run/footer.command.tsx")
@@ -267,6 +271,14 @@ if (!shareSource.includes("Legacy upstream sharing endpoints are disabled in Bot
 
 const botconnectorThemeSource = read("packages/tui/src/theme/assets/botconnector.json")
 if (botconnectorThemeSource.includes("opencode.ai/theme.json")) fail("BotConnector theme still references upstream schema")
+
+const serverUi = read("packages/opencode/src/server/shared/ui.ts")
+if (serverUi.includes("app.opencode.ai") || serverUi.includes("UI_UPSTREAM") || serverUi.includes("upstreamURL(")) {
+  fail("server UI can still proxy to an upstream product")
+}
+if (!serverUi.includes("BotConnector web UI is not bundled in this CLI build")) {
+  fail("unbundled server UI does not fail closed")
+}
 
 if (process.exitCode) process.exit(process.exitCode)
 console.log("BOTCONNECTOR_RELEASE_AUDIT_PASS")
