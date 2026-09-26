@@ -1,4 +1,4 @@
-import { makeDefaultApi } from "@opencode-ai/protocol/api"
+import { makeDefaultApi } from "@botconnector/protocol/api"
 import { LocationMiddleware } from "./location"
 import { SessionLocationMiddleware } from "./middleware/session-location"
 

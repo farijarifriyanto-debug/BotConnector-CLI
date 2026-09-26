@@ -52,15 +52,15 @@ jobs:
       - name: Build botconnector CLI (single target, skip web UI embed)
         env:
           OPENCODE_VERSION: ${{ inputs.version }}
-        run: bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
+        run: bun run ./packages/botconnector/script/build.ts --single --skip-embed-web-ui
 
       - name: Package binary
         run: |
           set -e
           if [ "$RUNNER_OS" = "Windows" ]; then
-            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
           else
-            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
           fi
           test -n "$BIN"
           chmod +x "$BIN" || true

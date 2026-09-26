@@ -1,10 +1,10 @@
 import { getRequestEvent } from "solid-js/web"
-import { and, Database, eq, inArray, isNotNull, isNull, sql } from "@opencode-ai/console-core/drizzle/index.js"
-import { UserTable } from "@opencode-ai/console-core/schema/user.sql.js"
-import { WorkspaceTable } from "@opencode-ai/console-core/schema/workspace.sql.js"
-import { BillingTable } from "@opencode-ai/console-core/schema/billing.sql.js"
+import { and, Database, eq, inArray, isNotNull, isNull, sql } from "@botconnector/console-core/drizzle/index.js"
+import { UserTable } from "@botconnector/console-core/schema/user.sql.js"
+import { WorkspaceTable } from "@botconnector/console-core/schema/workspace.sql.js"
+import { BillingTable } from "@botconnector/console-core/schema/billing.sql.js"
 import { redirect } from "@solidjs/router"
-import { Actor } from "@opencode-ai/console-core/actor.js"
+import { Actor } from "@botconnector/console-core/actor.js"
 
 import { createClient } from "@openauthjs/openauth/client"
 

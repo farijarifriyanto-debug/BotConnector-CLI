@@ -1,7 +1,7 @@
 import { Message, Model, Part, Session, SessionStatus, SnapshotFileDiff, UserMessage } from "@opencode-ai/sdk/v2"
-import { SessionTurn } from "@opencode-ai/session-ui/session-turn"
-import { SessionReview } from "@opencode-ai/session-ui/session-review"
-import { DataProvider } from "@opencode-ai/session-ui/context"
+import { SessionTurn } from "@botconnector/session-ui/session-turn"
+import { SessionReview } from "@botconnector/session-ui/session-review"
+import { DataProvider } from "@botconnector/session-ui/context"
 import { FileComponentProvider } from "@opencode-ai/ui/context/file"
 import { WorkerPoolProvider } from "@opencode-ai/ui/context/worker-pool"
 import { createAsync, query, useParams } from "@solidjs/router"
@@ -10,22 +10,22 @@ import { Share } from "~/core/share"
 import { Logo, Mark } from "@opencode-ai/ui/logo"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { ProviderIcon } from "@opencode-ai/ui/provider-icon"
-import { iife } from "@opencode-ai/core/util/iife"
-import { Binary } from "@opencode-ai/core/util/binary"
-import { NamedError } from "@opencode-ai/core/util/error"
+import { iife } from "@botconnector/core/util/iife"
+import { Binary } from "@botconnector/core/util/binary"
+import { NamedError } from "@botconnector/core/util/error"
 import { DateTime } from "luxon"
 import { createStore } from "solid-js/store"
 import NotFound from "../[...404]"
 import { Tabs } from "@opencode-ai/ui/tabs"
-import { MessageNav } from "@opencode-ai/session-ui/message-nav"
-import { FileSSR } from "@opencode-ai/session-ui/file-ssr"
+import { MessageNav } from "@botconnector/session-ui/message-nav"
+import { FileSSR } from "@botconnector/session-ui/file-ssr"
 import { clientOnly } from "@solidjs/start"
 import { Meta, Title } from "@solidjs/meta"
 import { Base64 } from "js-base64"
 import { getRequestEvent } from "solid-js/web"
 
 const ClientOnlyWorkerPoolProvider = clientOnly(() =>
-  import("@opencode-ai/session-ui/pierre/worker").then((m) => ({
+  import("@botconnector/session-ui/pierre/worker").then((m) => ({
     default: (props: { children: any }) => (
       <WorkerPoolProvider pools={m.getWorkerPools()}>{props.children}</WorkerPoolProvider>
     ),
