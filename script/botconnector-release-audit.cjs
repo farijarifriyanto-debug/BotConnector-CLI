@@ -25,7 +25,7 @@ if (Object.keys(gateway?.models ?? {}).length !== 0) fail("bundled BotConnector 
 if (!launcher.includes("provider.models = {}")) fail("launcher does not purge persisted Gateway model snapshots")
 
 const liveProviderSource = read("packages/opencode/src/provider/provider.ts")
-if (!liveProviderSource.includes('botconnectorBaseURL.replace(/\\\\/+$/, "") + "/models"')) {
+if (!liveProviderSource.includes('botconnectorBaseURL.replace(/\\/+$/, "") + "/models"')) {
   fail("BotConnector Gateway does not discover the live /v1/models catalog")
 }
 if (!liveProviderSource.includes("botconnector.models = {}")) fail("live catalog path does not clear stale model snapshots")
