@@ -805,7 +805,7 @@ function defaultModelFromConfig(
   if (configured && providers[configured.providerID]?.models[configured.modelID]) return configured
 
   // First-session ACP startup must stay inside BotConnector-owned providers.
-  // Never fall back to the upstream OpenCode/Zen provider simply because it is
+  // Never fall back to the upstream upstream engine/Zen provider simply because it is
   // present in the embedded provider catalog.
   const botconnectorProvider = providers[ProviderV2.ID.make("botconnector")]
   const botconnectorModel = botconnectorProvider ? Provider.sort(Object.values(botconnectorProvider.models))[0] : undefined
