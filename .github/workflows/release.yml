@@ -19,7 +19,7 @@ jobs:
         include:
           - os: windows-latest
             asset_name: botconnector-windows-x64
-            bin_glob: "botconnector.exe"
+            bin_glob: "bccli.exe"
             archive_ext: zip
           - os: ubuntu-latest
             asset_name: botconnector-linux-x64
@@ -58,9 +58,9 @@ jobs:
         run: |
           set -e
           if [ "$RUNNER_OS" = "Windows" ]; then
-            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'bccli.exe' | head -1)
           else
-            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'bccli' -type f | head -1)
           fi
           test -n "$BIN"
           chmod +x "$BIN" || true
@@ -104,7 +104,7 @@ jobs:
           fi
           gh release create "v${{ inputs.version }}" \
             --repo "${{ github.repository }}" \
-            --title "BotConnector CLI v${{ inputs.version }}" \
+            --title "BCCLI v${{ inputs.version }}" \
             --notes "Unsigned build. Windows: SmartScreen will warn on first run (click More info -> Run anyway) since this isn't code-signed yet." \
             "${RELEASE_FLAGS[@]}" \
             $FILES

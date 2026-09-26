@@ -6,7 +6,7 @@ const fail = (message) => {
   process.exitCode = 1
 }
 
-const launcher = read("npm-package/main/bin/botconnector.js")
+const launcher = read("npm-package/main/bin/bccli.js")
 for (const needle of [
   "env.BOTCONNECTOR_CONFIG = seededConfig",
   "delete env.OPENCODE_CONFIG",
@@ -113,7 +113,7 @@ if (!initializeTemplate.includes("future BotConnector sessions")) fail("initiali
 if (initializeTemplate.includes("future OpenCode sessions")) fail("initialize template leaks upstream product identity")
 
 const homeRoute = read("packages/tui/src/routes/home.tsx")
-if (!homeRoute.includes(">BotConnector</text>") || !homeRoute.includes('"CLOUD"') || !homeRoute.includes('"LOCAL"')) {
+if (!homeRoute.includes(">BCCLI</text>") || !homeRoute.includes('"CLOUD"') || !homeRoute.includes('"LOCAL"')) {
   fail("compact TUI home is missing BotConnector Cloud/Local identity")
 }
 const sessionRoute = read("packages/tui/src/routes/session/index.tsx")
@@ -138,7 +138,7 @@ for (const source of ["MoCode-TUI", "TermIDE", "Hunk"]) {
 }
 
 const promptComponent = read("packages/tui/src/component/prompt/index.tsx")
-if (!promptComponent.includes("Ask BotConnector…")) {
+if (!promptComponent.includes("Ask BCCLI…")) {
   fail("TUI prompt still uses generic upstream home copy")
 }
 
@@ -219,7 +219,7 @@ for (const path of boundaryFiles) {
 }
 
 const installation = read("packages/botconnector/src/installation/index.ts")
-if (!installation.includes("npm install -g botconnector-cli@")) fail("curl upgrade path does not point users to BotConnector npm")
+if (!installation.includes("npm install -g bccli@")) fail("curl upgrade path does not point users to BCCLI npm")
 if (!installation.includes('"farijarifriyanto-debug/tap"')) fail("Homebrew upgrade does not use the BotConnector tap")
 
 const providerHeaders = read("packages/botconnector/src/provider/provider.ts")

@@ -25,8 +25,8 @@ const archMap = {
 const platform = platformMap[os.platform()] ?? os.platform()
 const arch = archMap[os.arch()] ?? os.arch()
 const base = `botconnector-${platform}-${arch}`
-const sourceBinary = platform === "windows" ? "botconnector.exe" : "botconnector"
-const targetBinary = path.join(__dirname, "bin", "botconnector.exe")
+const sourceBinary = platform === "windows" ? "bccli.exe" : "bccli"
+const targetBinary = path.join(__dirname, "bin", "bccli.exe")
 
 function supportsAvx2() {
   if (arch !== "x64") return false

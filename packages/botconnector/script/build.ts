@@ -176,7 +176,7 @@ for (const item of targets) {
       autoloadTsconfig: true,
       autoloadPackageJson: true,
       target: name.replace(pkg.name, "bun") as any,
-      outfile: `dist/${name}/bin/botconnector`,
+      outfile: `dist/${name}/bin/bccli`,
       execArgv: [`--user-agent=botconnector/${Script.version}`, "--use-system-ca", "--"],
       windows: {},
     },
@@ -208,7 +208,7 @@ for (const item of targets) {
 
   // Smoke test: only run if binary is for current platform
   if (item.os === process.platform && item.arch === process.arch && !item.abi) {
-    const binaryPath = `dist/${name}/bin/botconnector`
+    const binaryPath = `dist/${name}/bin/bccli`
     console.log(`Running smoke test: ${binaryPath} --version`)
     try {
       const versionOutput = await $`${binaryPath} --version`.text()

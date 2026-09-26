@@ -1,7 +1,7 @@
 {
-  "name": "botconnector-cli",
-  "version": "0.1.13",
-  "description": "BotConnector CLI/TUI -- a local-first AI agent for the terminal.",
+  "name": "bccli",
+  "version": "0.1.14-beta.1",
+  "description": "BCCLI -- the BotConnector Cloud + Local AI CLI/TUI.",
   "license": "MIT",
   "homepage": "https://github.com/farijarifriyanto-debug/BotConnector-CLI",
   "repository": {
@@ -9,15 +9,21 @@
     "url": "git+https://github.com/farijarifriyanto-debug/BotConnector-CLI.git"
   },
   "bin": {
-    "botconnector": "bin/botconnector.js"
+    "bccli": "bin/bccli.js"
   },
-  "files": ["bin/", "default-config/"],
-  "os": ["win32", "linux"],
+  "files": [
+    "bin/",
+    "default-config/"
+  ],
+  "os": [
+    "win32",
+    "linux"
+  ],
   "engines": {
     "node": ">=18"
   },
   "optionalDependencies": {
-    "botconnector-cli-win32-x64": "0.1.13",
-    "botconnector-cli-linux-x64": "0.1.13"
+    "bccli-win32-x64": "0.1.14-beta.1",
+    "bccli-linux-x64": "0.1.14-beta.1"
   }
 }

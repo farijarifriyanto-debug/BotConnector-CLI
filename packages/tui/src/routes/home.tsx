@@ -84,7 +84,7 @@ export function Home() {
     <HomeSessionDestinationProvider>
       <box flexGrow={1} width="100%" paddingLeft={2} paddingRight={2} paddingTop={1}>
         <box flexDirection="row" gap={1} flexShrink={0}>
-          <text fg={theme.primary}>BotConnector</text>
+          <text fg={theme.primary}>BCCLI</text>
           <text fg={theme.textMuted}>·</text>
           <text fg={theme.text}>{activeModel().model}</text>
           <text fg={connectionLabel() === "LOCAL" ? theme.success : theme.info}>{connectionLabel()}</text>

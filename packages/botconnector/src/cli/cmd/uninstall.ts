@@ -129,10 +129,10 @@ async function showRemovalSummary(targets: RemovalTargets, method: Installation.
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string> = {
-      npm: "npm uninstall -g botconnector-cli",
-      pnpm: "pnpm uninstall -g botconnector-cli",
-      bun: "bun remove -g botconnector-cli",
-      yarn: "yarn global remove botconnector-cli",
+      npm: "npm uninstall -g bccli",
+      pnpm: "pnpm uninstall -g bccli",
+      bun: "bun remove -g bccli",
+      yarn: "yarn global remove bccli",
       brew: "brew uninstall botconnector",
       choco: "choco uninstall botconnector",
       scoop: "scoop uninstall botconnector",
@@ -180,10 +180,10 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string[]> = {
-      npm: ["npm", "uninstall", "-g", "botconnector-cli"],
-      pnpm: ["pnpm", "uninstall", "-g", "botconnector-cli"],
-      bun: ["bun", "remove", "-g", "botconnector-cli"],
-      yarn: ["yarn", "global", "remove", "botconnector-cli"],
+      npm: ["npm", "uninstall", "-g", "bccli"],
+      pnpm: ["pnpm", "uninstall", "-g", "bccli"],
+      bun: ["bun", "remove", "-g", "bccli"],
+      yarn: ["yarn", "global", "remove", "bccli"],
       brew: ["brew", "uninstall", "botconnector"],
       choco: ["choco", "uninstall", "botconnector"],
       scoop: ["scoop", "uninstall", "botconnector"],

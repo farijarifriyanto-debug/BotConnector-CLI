@@ -43,8 +43,8 @@ jobs:
           test "$(node -p "require('./npm-package/main/package.json').version")" = "$V"
           test "$(node -p "require('./npm-package/platform-linux-x64/package.json').version")" = "$V"
           test "$(node -p "require('./npm-package/platform-win32-x64/package.json').version")" = "$V"
-          test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-linux-x64']")" = "$V"
-          test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['botconnector-cli-win32-x64']")" = "$V"
+          test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['bccli-linux-x64']")" = "$V"
+          test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['bccli-win32-x64']")" = "$V"
           npm --version
       - name: Enforce BotConnector self-audit release gate
         shell: bash
@@ -122,11 +122,11 @@ jobs:
           - os: ubuntu-latest
             package_dir: npm-package/platform-linux-x64
             artifact_name: npm-linux-x64
-            binary_name: botconnector
+            binary_name: bccli
           - os: windows-latest
             package_dir: npm-package/platform-win32-x64
             artifact_name: npm-win32-x64
-            binary_name: botconnector.exe
+            binary_name: bccli.exe
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -149,9 +149,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$RUNNER_OS" = "Windows" ]; then
-            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'bccli.exe' | head -1)
           else
-            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'bccli' -type f | head -1)
           fi
           test -n "$BIN"
           cp "$BIN" "${{ matrix.package_dir }}/${{ matrix.binary_name }}"
@@ -216,17 +216,19 @@ jobs:
           set -euo pipefail
           unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
           V="${{ inputs.version }}"
+          TAG="latest"
+          [[ "$V" == *-* ]] && TAG="beta"
           publish_if_missing() {
             local pkg="$1"
             local file="$2"
             if npm view "${pkg}@${V}" version >/dev/null 2>&1; then
               echo "${pkg}@${V} already exists; skipping"
             else
-              npm publish "$file" --access public --provenance
+              npm publish "$file" --access public --provenance --tag "$TAG"
             fi
           }
-          publish_if_missing "botconnector-cli-linux-x64" "$(find artifacts/linux -name '*.tgz' -type f | head -1)"
-          publish_if_missing "botconnector-cli-win32-x64" "$(find artifacts/windows -name '*.tgz' -type f | head -1)"
+          publish_if_missing "bccli-linux-x64" "$(find artifacts/linux -name '*.tgz' -type f | head -1)"
+          publish_if_missing "bccli-win32-x64" "$(find artifacts/windows -name '*.tgz' -type f | head -1)"
 
   publish-main:
     needs: publish-platforms
@@ -245,16 +247,18 @@ jobs:
           path: artifacts/main
           run-id: ${{ inputs.reuse_run_id || github.run_id }}
           github-token: ${{ github.token }}
-      - name: Publish botconnector-cli with npm trusted publishing
+      - name: Publish bccli with npm trusted publishing
         shell: bash
         run: |
           set -euo pipefail
           unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
           V="${{ inputs.version }}"
-          if npm view "botconnector-cli@${V}" version >/dev/null 2>&1; then
-            echo "botconnector-cli@${V} already exists; skipping"
+          TAG="latest"
+          [[ "$V" == *-* ]] && TAG="beta"
+          if npm view "bccli@${V}" version >/dev/null 2>&1; then
+            echo "bccli@${V} already exists; skipping"
           else
-            npm publish "$(find artifacts/main -name '*.tgz' -type f | head -1)" --access public --provenance
+            npm publish "$(find artifacts/main -name '*.tgz' -type f | head -1)" --access public --provenance --tag "$TAG"
           fi
       - name: Verify registry release
         shell: bash
@@ -262,11 +266,11 @@ jobs:
           set -euo pipefail
           V="${{ inputs.version }}"
           for i in {1..36}; do
-            MAIN=$(npm view "botconnector-cli@${V}" version 2>/dev/null || true)
-            LINUX=$(npm view "botconnector-cli-linux-x64@${V}" version 2>/dev/null || true)
-            WIN=$(npm view "botconnector-cli-win32-x64@${V}" version 2>/dev/null || true)
+            MAIN=$(npm view "bccli@${V}" version 2>/dev/null || true)
+            LINUX=$(npm view "bccli-linux-x64@${V}" version 2>/dev/null || true)
+            WIN=$(npm view "bccli-win32-x64@${V}" version 2>/dev/null || true)
             if [ "$MAIN" = "$V" ] && [ "$LINUX" = "$V" ] && [ "$WIN" = "$V" ]; then
-              echo "Published botconnector-cli@${V} and both platform packages."
+              echo "Published bccli@${V} and both platform packages."
               exit 0
             fi
             sleep 5
