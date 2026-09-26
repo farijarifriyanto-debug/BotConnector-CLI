@@ -113,11 +113,11 @@ if (!initializeTemplate.includes("future BotConnector sessions")) fail("initiali
 if (initializeTemplate.includes("future OpenCode sessions")) fail("initialize template leaks upstream product identity")
 
 const homeRoute = read("packages/tui/src/routes/home.tsx")
-if (!homeRoute.includes("CLOUD + LOCAL AI ROUTER")) {
-  fail("TUI home is missing BotConnector product identity")
+if (!homeRoute.includes(">BotConnector</text>") || !homeRoute.includes('"CLOUD"') || !homeRoute.includes('"LOCAL"')) {
+  fail("compact TUI home is missing BotConnector Cloud/Local identity")
 }
 const sessionRoute = read("packages/tui/src/routes/session/index.tsx")
-if (!homeRoute.includes("CLOUD + LOCAL AI ROUTER")) fail("minimal BotConnector home identity missing")
+if (homeRoute.includes("CLOUD + LOCAL AI ROUTER")) fail("legacy dashboard-style home identity returned")
 if (homeRoute.includes('name="home_bottom"')) fail("default home still renders the rotating tips/dashboard area")
 const botconnectorTheme = read("packages/tui/src/theme/assets/botconnector.json")
 if (!botconnectorTheme.includes('"darkStep9": "#22d3ee"')) fail("BotConnector primary brand color is not cyan")
@@ -125,11 +125,17 @@ if (!botconnectorTheme.includes('"darkSecondary": "#60a5fa"')) fail("BotConnecto
 if (!botconnectorTheme.includes('"darkOrange": "#fbbf24"')) fail("BotConnector warning color is not amber")
 const readmeBody = read("README.md")
 if (!readmeBody.includes("Cascadia Mono")) fail("recommended BotConnector terminal font is not documented")
-if (!sessionRoute.includes('kv.signal<"auto" | "hide">("sidebar", "auto")')) fail("session sidebar behavior is not restored to upstream OpenCode")
-if (!sessionRoute.includes('if (sidebar() === "auto" && wide()) return true')) fail("wide-terminal sidebar behavior is not restored to upstream OpenCode")
+if (!sessionRoute.includes('kv.signal<"auto" | "hide">("sidebar", "hide")')) fail("compact TUI must keep the sidebar collapsed by default")
+if (!sessionRoute.includes('if (sidebar() === "auto" && wide()) return true')) fail("explicit auto-sidebar mode no longer works on wide terminals")
 if (!sessionRoute.includes('const showThinking = createMemo(() => true)')) fail("thinking visibility is not restored to upstream OpenCode")
 if (!sessionRoute.includes('kv.signal("tool_details_visibility", true)')) fail("tool details are not restored to upstream OpenCode")
-if (!sessionRoute.includes('kv.signal("assistant_metadata_visibility", true)')) fail("assistant metadata is not restored to upstream OpenCode")
+if (!sessionRoute.includes('kv.signal("assistant_metadata_visibility", true)')) fail("assistant metadata visibility default changed unexpectedly")
+if (!sessionRoute.includes('"●"') || !sessionRoute.includes('"done"')) fail("compact assistant completion footer is missing")
+if (!sessionRoute.includes('more output · click to expand')) fail("compact shell output disclosure is missing")
+const compactTuiSources = read("TUI_DESIGN_SOURCES.md")
+for (const source of ["MoCode-TUI", "TermIDE", "Hunk"]) {
+  if (!compactTuiSources.includes(source)) fail(`compact TUI design source is undocumented: ${source}`)
+}
 
 const promptComponent = read("packages/tui/src/component/prompt/index.tsx")
 if (!promptComponent.includes("Ask BotConnector…")) {
@@ -323,11 +329,20 @@ const privateNamespaces = [
   "storybook",
   "tui",
 ]
-const trackedIdentityFiles = [
-  "package.json",
-  "bun.lock",
-  ...fs.readdirSync("packages", { recursive: true }).filter((path) => typeof path === "string").map((path) => `packages/${path}`),
-].filter((path) => fs.existsSync(path) && fs.statSync(path).isFile())
+function trackedPackageFiles(root = "packages") {
+  const result = []
+  const visit = (directory) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name === "dist" || entry.name === ".turbo") continue
+      const path = `${directory}/${entry.name}`
+      if (entry.isDirectory()) visit(path)
+      else if (entry.isFile()) result.push(path)
+    }
+  }
+  visit(root)
+  return result
+}
+const trackedIdentityFiles = ["package.json", "bun.lock", ...trackedPackageFiles()]
 for (const path of trackedIdentityFiles) {
   const body = read(path)
   for (const name of privateNamespaces) {

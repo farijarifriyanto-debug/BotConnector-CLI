@@ -253,7 +253,7 @@ export function Session() {
   })
 
   const dimensions = useTerminalDimensions()
-  const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
+  const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "hide")
   const [sidebarOpen, setSidebarOpen] = createSignal(false)
   const [conceal, setConceal] = createSignal(true)
   const thinking = useThinkingMode()
@@ -1557,16 +1557,15 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
                       : local.agent.color(props.message.agent),
                 }}
               >
-                ▣{" "}
-              </span>{" "}
-              <span style={{ fg: theme.text }}>{Locale.titlecase(props.message.mode)}</span>
-              <span style={{ fg: theme.textMuted }}> · {model()}</span>
+                {props.message.error?.name === "MessageAbortedError" ? "!" : "●"}{" "}
+              </span>
+              <span style={{ fg: theme.textMuted }}>
+                {props.message.error?.name === "MessageAbortedError" ? "interrupted" : "done"}
+              </span>
               <Show when={duration()}>
                 <span style={{ fg: theme.textMuted }}> · {Locale.duration(duration())}</span>
               </Show>
-              <Show when={props.message.error?.name === "MessageAbortedError"}>
-                <span style={{ fg: theme.textMuted }}> · interrupted</span>
-              </Show>
+              <span style={{ fg: theme.textMuted }}> · {model()}</span>
             </text>
           </box>
         </Match>
@@ -2007,14 +2006,14 @@ function BlockTool(props: {
     <box
       ref={(el: BoxRenderable) => alwaysSeparate.add(el)}
       border={["left"]}
-      paddingTop={1}
-      paddingBottom={1}
+      paddingTop={0}
+      paddingBottom={0}
       paddingLeft={2}
       marginTop={1}
-      gap={1}
-      backgroundColor={hover() ? theme.backgroundMenu : theme.backgroundPanel}
+      gap={0}
+      backgroundColor={hover() && props.onClick ? theme.backgroundElement : theme.background}
       customBorderChars={SplitBorder.customBorderChars}
-      borderColor={theme.background}
+      borderColor={theme.border}
       onMouseOver={() => props.onClick && setHover(true)}
       onMouseOut={() => setHover(false)}
       onMouseUp={() => {
@@ -2051,8 +2050,8 @@ function Shell(props: ToolProps) {
   const isRunning = createMemo(() => props.part.state.status === "running")
   const output = createMemo(() => stripAnsi(stringValue(props.metadata.output)?.trim() ?? ""))
   const [expanded, setExpanded] = createSignal(false)
-  const maxLines = 10
-  const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))
+  const maxLines = 4
+  const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 8))
   const collapsed = createMemo(() => collapseToolOutput(output(), maxLines, maxChars()))
   const limited = createMemo(() => {
     if (expanded() || !collapsed().overflow) return output()
@@ -2081,15 +2080,22 @@ function Shell(props: ToolProps) {
           part={props.part}
           onClick={collapsed().overflow ? () => setExpanded((prev) => !prev) : undefined}
         >
-          <box gap={1}>
-            <Show when={isRunning()} fallback={<text fg={theme.text}>$ {stringValue(props.input.command)}</text>}>
-              <Spinner color={theme.text}>{stringValue(props.input.command)}</Spinner>
+          <box gap={0}>
+            <Show
+              when={isRunning()}
+              fallback={<text fg={theme.text}>bash {stringValue(props.input.command)}</text>}
+            >
+              <Spinner color={theme.text}>{`bash ${stringValue(props.input.command)}`}</Spinner>
             </Show>
             <Show when={output()}>
-              <text fg={theme.text}>{limited()}</text>
+              <box paddingLeft={2}>
+                <text fg={theme.textMuted}>└─ {limited()}</text>
+              </box>
             </Show>
             <Show when={collapsed().overflow}>
-              <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
+              <box paddingLeft={2}>
+                <text fg={theme.textMuted}>{expanded() ? "└─ click to collapse" : "└─ more output · click to expand"}</text>
+              </box>
             </Show>
           </box>
         </BlockTool>

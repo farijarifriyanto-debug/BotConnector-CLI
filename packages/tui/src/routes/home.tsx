@@ -83,42 +83,27 @@ export function Home() {
   return (
     <HomeSessionDestinationProvider>
       <box flexGrow={1} width="100%" paddingLeft={2} paddingRight={2} paddingTop={1}>
-        <box flexDirection="row" width="100%" flexShrink={0}>
-          <box flexDirection="column" flexGrow={1}>
-            <text fg={theme.primary}>BOTCONNECTOR</text>
-            <text fg={theme.textMuted}>CLOUD + LOCAL AI ROUTER</text>
-          </box>
-          <box flexDirection="row" gap={3} alignItems="center" flexShrink={0}>
-            <box flexDirection="column">
-              <text fg={theme.text}>Cloud</text>
-              <text fg={cloudReady() ? theme.success : theme.textMuted}>● {cloudReady() ? "Ready" : "Unavailable"}</text>
-            </box>
-            <box flexDirection="column">
-              <text fg={theme.text}>Local</text>
-              <text fg={localReady() ? theme.success : theme.textMuted}>● {localReady() ? "Ready" : "Not detected"}</text>
-            </box>
-            <box flexDirection="column">
-              <text fg={theme.text}>Router</text>
-              <text fg={theme.primary}>● Active</text>
-            </box>
-          </box>
-        </box>
-
-        <box height={1} flexShrink={0} />
-        <box flexDirection="row" gap={2} flexShrink={0}>
-          <text fg={theme.textMuted}>Provider:</text>
-          <text fg={theme.text}>{activeModel().provider}</text>
-          <text fg={theme.textMuted}>│</text>
-          <text fg={theme.textMuted}>Model:</text>
+        <box flexDirection="row" gap={1} flexShrink={0}>
+          <text fg={theme.primary}>BotConnector</text>
+          <text fg={theme.textMuted}>·</text>
           <text fg={theme.text}>{activeModel().model}</text>
-          <text fg={connectionLabel() === "LOCAL" ? theme.success : theme.info}>[{connectionLabel()}]</text>
+          <text fg={connectionLabel() === "LOCAL" ? theme.success : theme.info}>{connectionLabel()}</text>
+          <text fg={theme.textMuted}>·</text>
+          <text fg={cloudReady() ? theme.success : theme.textMuted}>Cloud {cloudReady() ? "ready" : "offline"}</text>
+          <text fg={theme.textMuted}>·</text>
+          <text fg={localReady() ? theme.success : theme.textMuted}>Local {localReady() ? "ready" : "not detected"}</text>
         </box>
 
         <box flexGrow={1} minHeight={2} />
 
         <box width="100%" zIndex={1000} paddingBottom={1} flexShrink={0}>
           <pluginRuntime.Slot name="home_prompt" mode="replace" ref={bind}>
-            <Prompt ref={bind} right={<pluginRuntime.Slot name="home_prompt_right" />} placeholders={placeholder} />
+            <Prompt
+              ref={bind}
+              right={<pluginRuntime.Slot name="home_prompt_right" />}
+              placeholders={placeholder}
+              hint={<text fg={theme.textMuted}>type a task · ctrl+p commands</text>}
+            />
           </pluginRuntime.Slot>
         </box>
         <Toast />
