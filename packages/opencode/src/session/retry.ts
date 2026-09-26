@@ -7,8 +7,8 @@ import { isRecord } from "@/util/record"
 
 export type Err = ReturnType<NamedError["toObject"]>
 
-export const GO_UPSELL_MESSAGE = "Free usage exceeded, subscribe to Go"
-export const GO_UPSELL_URL = "https://opencode.ai/go"
+export const GO_UPSELL_MESSAGE = "Free usage limit reached"
+export const GO_UPSELL_URL = "https://app.botconnector.id"
 export type RetryReason = "free_tier_limit" | "account_rate_limit" | (string & {})
 
 export type Retryable = {
@@ -103,15 +103,14 @@ export function retryable(error: Err, provider: string) {
           reason: "free_tier_limit",
           provider,
           title: "Free limit reached",
-          message: "Subscribe to OpenCode Go for reliable access to the best open-source models for $10/month.",
-          label: "subscribe",
+          message: "Open BotConnector to review your available models, balance, or plan.",
+          label: "open BotConnector",
           link: GO_UPSELL_URL,
         },
       }
     }
     if (error.data.responseBody?.includes("GoUsageLimitError")) {
       const body = parseJSON(error.data.responseBody)
-      const workspace = str(body?.metadata?.workspace)
       const limitName = str(body?.metadata?.limitName)
       const retryAfter = num(error.data.responseHeaders?.["retry-after"])
       const resetIn = iife(() => {
@@ -129,13 +128,13 @@ export function retryable(error: Err, provider: string) {
 
       const message = `${limitName ? `${limitName} usage limit` : "Usage limit"} reached. It will reset in ${resetIn}. To continue using this model now, enable usage from your available balance`
 
-      const link = `https://opencode.ai/workspace/${workspace}/go`
+      const link = "https://app.botconnector.id"
       return {
         message: `${message} - ${link}`,
         action: {
           reason: "account_rate_limit",
           provider,
-          title: "Go limit reached",
+          title: "Usage limit reached",
           message,
           label: "open settings",
           link,

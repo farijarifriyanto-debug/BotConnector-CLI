@@ -90,8 +90,12 @@ if (run.includes('JSON.stringify({\n                type,\n                times
 if (!run.includes('emit("error", { error: formatRunError(')) fail("JSON errors are not sanitized")
 
 const index = read("packages/opencode/src/index.ts")
-if (index.includes(".command(GithubCommand)") || index.includes(".command(ConsoleCommand)")) {
-  fail("upstream-only account/github commands are exposed in the BotConnector CLI")
+if (
+  index.includes(".command(GithubCommand)") ||
+  index.includes(".command(ConsoleCommand)") ||
+  index.includes(".command(WebCommand)")
+) {
+  fail("upstream-only or unbundled commands are exposed in the BotConnector CLI")
 }
 
 const footer = read("packages/opencode/src/cli/cmd/run/footer.command.tsx")
@@ -177,6 +181,108 @@ if (!agent.includes("initialValues: AVAILABLE_PERMISSIONS")) fail("interactive a
 const uninstall = read("packages/opencode/src/cli/cmd/uninstall.ts")
 for (const legacy of ["uninstall -g opencode-ai", "uninstall opencode"]) {
   if (uninstall.includes(legacy)) fail(`uninstall still targets upstream package: ${legacy}`)
+}
+
+const boundaryFiles = [
+  "packages/opencode/src/installation/index.ts",
+  "packages/tui/src/app.tsx",
+  "packages/tui/src/component/dialog-provider.tsx",
+  "packages/tui/src/component/error-component.tsx",
+  "packages/tui/src/util/error.ts",
+  "packages/tui/src/component/dialog-retry-action.tsx",
+  "packages/opencode/src/session/retry.ts",
+  "packages/opencode/src/share/share-next.ts",
+  "packages/opencode/src/mcp/oauth-provider.ts",
+  "packages/opencode/src/provider/provider.ts",
+  "README.md",
+]
+const boundaryForbidden = [
+  "https://opencode.ai",
+  "https://opncd.ai",
+  "github.com/anomalyco/opencode",
+  "anomalyco/tap",
+  "OpenCode Go",
+  "OpenCode Zen",
+  "opencode.json",
+  "opencode crashed",
+]
+for (const path of boundaryFiles) {
+  const body = read(path)
+  for (const needle of boundaryForbidden) {
+    if (body.includes(needle)) fail(`${path} crosses BotConnector product boundary: ${needle}`)
+  }
+}
+
+const installation = read("packages/opencode/src/installation/index.ts")
+if (!installation.includes("npm install -g botconnector-cli@")) fail("curl upgrade path does not point users to BotConnector npm")
+if (!installation.includes('"farijarifriyanto-debug/tap"')) fail("Homebrew upgrade does not use the BotConnector tap")
+
+const providerHeaders = read("packages/opencode/src/provider/provider.ts")
+for (const required of ['"https://botconnector.id/"', '"X-Title": "BotConnector"', '"X-BILLING-INVOKE-ORIGIN": "BotConnector"']) {
+  if (!providerHeaders.includes(required)) fail(`provider identity missing: ${required}`)
+}
+
+const mcpOauth = read("packages/opencode/src/mcp/oauth-provider.ts")
+if (!mcpOauth.includes('client_name: "BotConnector"') || !mcpOauth.includes('client_uri: "https://botconnector.id"')) {
+  fail("MCP OAuth client identity is not BotConnector")
+}
+
+const rootPackage = JSON.parse(read("package.json"))
+if (rootPackage.name !== "botconnector-cli-workspace") fail("root workspace still uses upstream product name")
+if (rootPackage.repository?.url !== "https://github.com/farijarifriyanto-debug/BotConnector-CLI") {
+  fail("root package repository metadata does not point to BotConnector")
+}
+
+const upstreamWorkflowGuards = {
+  ".github/workflows/pr-management.yml": "github.repository == 'anomalyco/opencode'",
+  ".github/workflows/review.yml": "github.repository == 'anomalyco/opencode'",
+  ".github/workflows/triage.yml": "github.repository == 'anomalyco/opencode'",
+  ".github/workflows/duplicate-issues.yml": "github.repository == 'anomalyco/opencode'",
+  ".github/workflows/opencode.yml": "github.repository == 'anomalyco/opencode'",
+}
+for (const [path, guard] of Object.entries(upstreamWorkflowGuards)) {
+  if (!read(path).includes(guard)) fail(`${path} can run upstream AI automation in the BotConnector repository`)
+}
+
+const issueTemplate = read(".github/ISSUE_TEMPLATE/bug-report.yml")
+if (!issueTemplate.includes("id: botconnector-version") || issueTemplate.includes("label: OpenCode version")) {
+  fail("bug report template still exposes upstream product version fields")
+}
+
+const tuiMigration = read("packages/opencode/src/config/tui-migrate.ts")
+if (tuiMigration.includes("https://opencode.ai/tui.json")) fail("TUI migration writes upstream schema URLs")
+
+const tuiApp = read("packages/tui/src/app.tsx")
+if (tuiApp.includes("DialogConsoleOrg") || tuiApp.includes('"console.org.switch"')) {
+  fail("TUI still exposes inherited upstream console organization switching")
+}
+
+const accountCli = read("packages/opencode/src/cli/cmd/account.ts")
+if (!accountCli.includes('defaultConsoleUrl = "https://app.botconnector.id"')) {
+  fail("account flow default is not BotConnector")
+}
+const accountService = read("packages/opencode/src/account/account.ts")
+if (!accountService.includes('const clientId = "botconnector-cli"')) fail("account OAuth client id is not BotConnector")
+
+const shareSource = read("packages/opencode/src/share/share-next.ts")
+if (!shareSource.includes("Legacy upstream sharing endpoints are disabled in BotConnector")) {
+  fail("share path does not block legacy upstream origins")
+}
+
+const botconnectorThemeSource = read("packages/tui/src/theme/assets/botconnector.json")
+if (botconnectorThemeSource.includes("opencode.ai/theme.json")) fail("BotConnector theme still references upstream schema")
+
+const themeIndex = read("packages/tui/src/theme/index.ts")
+if (themeIndex.includes('import opencode from "./assets/opencode.json"') || themeIndex.includes("\n  opencode,\n")) {
+  fail("TUI theme selector still exposes the upstream product theme")
+}
+
+const serverUi = read("packages/opencode/src/server/shared/ui.ts")
+if (serverUi.includes("app.opencode.ai") || serverUi.includes("UI_UPSTREAM") || serverUi.includes("upstreamURL(")) {
+  fail("server UI can still proxy to an upstream product")
+}
+if (!serverUi.includes("BotConnector web UI is not bundled in this CLI build")) {
+  fail("unbundled server UI does not fail closed")
 }
 
 if (process.exitCode) process.exit(process.exitCode)

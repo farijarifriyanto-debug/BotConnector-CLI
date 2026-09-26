@@ -469,9 +469,9 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-            "X-Source": "opencode",
+            "HTTP-Referer": "https://botconnector.id/",
+            "X-Title": "BotConnector",
+            "X-Source": "botconnector",
           },
         },
       }),
@@ -480,8 +480,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://botconnector.id/",
+            "X-Title": "BotConnector",
           },
         },
       }),
@@ -490,9 +490,9 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: provider.source === "config",
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-            "X-BILLING-INVOKE-ORIGIN": "OpenCode",
+            "HTTP-Referer": "https://botconnector.id/",
+            "X-Title": "BotConnector",
+            "X-BILLING-INVOKE-ORIGIN": "BotConnector",
           },
         },
       }),
@@ -501,8 +501,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/",
-            "x-title": "opencode",
+            "http-referer": "https://botconnector.id/",
+            "x-title": "BotConnector",
           },
         },
       }),
@@ -606,8 +606,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://botconnector.id/",
+            "X-Title": "BotConnector",
           },
         },
       }),
@@ -887,7 +887,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "X-Cerebras-3rd-Party-Integration": "opencode",
+            "X-Cerebras-3rd-Party-Integration": "botconnector",
           },
         },
       }),
@@ -896,8 +896,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://botconnector.id/",
+            "X-Title": "BotConnector",
           },
         },
       }),

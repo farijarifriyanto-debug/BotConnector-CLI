@@ -207,8 +207,18 @@ const layer = Layer.effect(
       const headers: Record<string, string> = {}
       const active = yield* account.active()
       if (Option.isNone(active) || !active.value.active_org_id) {
-        const baseUrl = (yield* cfg.get()).enterprise?.url ?? "https://opncd.ai"
+        const baseUrl = (yield* cfg.get()).enterprise?.url ?? "https://app.botconnector.id"
         return { headers, api: legacyApi, baseUrl } satisfies Req
+      }
+
+      const accountOrigin = new URL(active.value.url).hostname.toLowerCase()
+      if (
+        accountOrigin === "opencode.ai" ||
+        accountOrigin.endsWith(".opencode.ai") ||
+        accountOrigin === "opncd.ai" ||
+        accountOrigin.endsWith(".opncd.ai")
+      ) {
+        throw new Error("Legacy upstream sharing endpoints are disabled in BotConnector")
       }
 
       const token = yield* account.token(active.value.id)
