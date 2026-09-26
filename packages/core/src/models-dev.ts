@@ -157,10 +157,10 @@ const layer = Layer.effect(
       ),
     )
 
-    const source = Flag.OPENCODE_MODELS_URL || "https://models.opencode.ai"
+    const source = Flag.BOTCONNECTOR_MODELS_URL || "https://models.dev"
     const filepath = path.join(
       Global.Path.cache,
-      source === "https://models.opencode.ai" ? "models.json" : `models-${Hash.fast(source)}.json`,
+      source === "https://models.dev" ? "models.json" : `models-${Hash.fast(source)}.json`,
     )
     const ttl = Duration.minutes(5)
     const lockKey = `models-dev:${filepath}`
@@ -181,10 +181,10 @@ const layer = Layer.effect(
       )
     })
 
-    const loadFromDisk = fs.readJson(Flag.OPENCODE_MODELS_PATH ?? filepath).pipe(
+    const loadFromDisk = fs.readJson(Flag.BOTCONNECTOR_MODELS_PATH ?? filepath).pipe(
       Effect.catch((error) => {
         if (
-          Flag.OPENCODE_MODELS_PATH === undefined &&
+          Flag.BOTCONNECTOR_MODELS_PATH === undefined &&
           error._tag === "FileSystemError" &&
           error.method === "readJson"
         ) {
@@ -219,8 +219,8 @@ const layer = Layer.effect(
       if (fromDisk) return fromDisk
       const snapshot = yield* loadSnapshot
       if (snapshot) return snapshot
-      if (Flag.OPENCODE_DISABLE_MODELS_FETCH) return {}
-      // Flock is cross-process: concurrent opencode CLIs can race on this cache file.
+      if (Flag.BOTCONNECTOR_DISABLE_MODELS_FETCH) return {}
+      // Flock is cross-process: concurrent BotConnector CLIs can race on this cache file.
       const text = yield* Effect.scoped(
         Effect.gen(function* () {
           yield* Flock.effect(lockKey)

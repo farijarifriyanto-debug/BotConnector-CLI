@@ -51,14 +51,14 @@ export const ServerApi = makeApi({
   sessionLocationMiddleware: SessionLocationMiddleware,
 })
 
-export const RootHttpApi = HttpApi.make("opencode-root")
+export const RootHttpApi = HttpApi.make("botconnector-root")
   .addHttpApi(ControlApi)
   .addHttpApi(ControlPlaneApi)
   .addHttpApi(GlobalApi)
   .middleware(SchemaErrorMiddleware)
   .middleware(Authorization)
 
-export const InstanceHttpApi = HttpApi.make("opencode-instance")
+export const InstanceHttpApi = HttpApi.make("botconnector-instance")
   .addHttpApi(ConfigApi)
   .addHttpApi(ExperimentalApi)
   .addHttpApi(FileApi)
