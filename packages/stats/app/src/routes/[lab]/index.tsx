@@ -7,7 +7,7 @@ import {
   type MarketDay,
   type ModelUsagePoint,
   type StatsLabData,
-} from "@opencode-ai/stats-core/domain/home"
+} from "@botconnector/stats-core/domain/home"
 import { createAsync, query, useParams } from "@solidjs/router"
 import { createMemo, createSignal, createUniqueId, For, onMount, Show, type JSX } from "solid-js"
 import { getRequestEvent } from "solid-js/web"

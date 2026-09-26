@@ -144,14 +144,14 @@ jobs:
       - name: Build CLI
         env:
           OPENCODE_VERSION: ${{ inputs.version }}
-        run: bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
+        run: bun run ./packages/botconnector/script/build.ts --single --skip-embed-web-ui
       - name: Pack platform package
         run: |
           set -euo pipefail
           if [ "$RUNNER_OS" = "Windows" ]; then
-            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector.exe' | head -1)
           else
-            BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
           fi
           test -n "$BIN"
           cp "$BIN" "${{ matrix.package_dir }}/${{ matrix.binary_name }}"

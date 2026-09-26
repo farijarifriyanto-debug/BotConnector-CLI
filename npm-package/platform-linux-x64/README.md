@@ -10,8 +10,8 @@ package on npm and attached to the corresponding GitHub Release. To
 reproduce it locally, run the CLI build script from the repo root:
 
 ```
-bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
+bun run ./packages/botconnector/script/build.ts --single --skip-embed-web-ui
 ```
 
-then copy the resulting binary from `packages/opencode/dist/` into this
+then copy the resulting binary from `packages/botconnector/dist/` into this
 directory before running `npm publish`.

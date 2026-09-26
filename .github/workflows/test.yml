@@ -43,21 +43,21 @@ jobs:
         uses: ./.github/actions/setup-bun
 
       - name: Typecheck BotConnector CLI
-        working-directory: packages/opencode
+        working-directory: packages/botconnector
         run: bun run typecheck
 
       - name: Run prompt/cache regression tests
-        working-directory: packages/opencode
+        working-directory: packages/botconnector
         run: bun test test/session/system.test.ts --test-name-pattern "BotConnector system context|upstream system context"
 
       - name: Smoke-build BotConnector CLI
         env:
           OPENCODE_VERSION: 0.0.0-ci
-        run: bun run ./packages/opencode/script/build.ts --single --skip-embed-web-ui
+        run: bun run ./packages/botconnector/script/build.ts --single --skip-embed-web-ui
 
       - name: Smoke-run built binary
         run: |
-          BIN=$(find packages/opencode/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+          BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
           test -n "$BIN"
           chmod +x "$BIN"
           "$BIN" --version
@@ -126,7 +126,7 @@ jobs:
 
       - name: Run HttpApi exerciser gates
         if: runner.os == 'Linux'
-        working-directory: packages/opencode
+        working-directory: packages/botconnector
         run: bun run test:httpapi
 
   e2e:

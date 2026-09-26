@@ -1,6 +1,6 @@
-import { Binary } from "@opencode-ai/core/util/binary"
-import { retry } from "@opencode-ai/core/util/retry"
-import type { OpenCodeEvent, SessionApi, SessionMessageInfo } from "@opencode-ai/client/promise"
+import { Binary } from "@botconnector/core/util/binary"
+import { retry } from "@botconnector/core/util/retry"
+import type { OpenCodeEvent, SessionApi, SessionMessageInfo } from "@botconnector/client/promise"
 import type {
   Message,
   OpencodeClient,
@@ -11,7 +11,7 @@ import type {
   SessionStatus,
   Todo,
 } from "@opencode-ai/sdk/v2/client"
-import type { FileDiffInfo } from "@opencode-ai/client/promise"
+import type { FileDiffInfo } from "@botconnector/client/promise"
 import { batch } from "solid-js"
 import { createStore, produce, reconcile } from "solid-js/store"
 import { message as cleanMessage } from "@/utils/diffs"

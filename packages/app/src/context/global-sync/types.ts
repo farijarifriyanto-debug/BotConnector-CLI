@@ -13,9 +13,9 @@ import type {
   Todo,
   VcsInfo,
 } from "@opencode-ai/sdk/v2/client"
-import type { FileDiffInfo } from "@opencode-ai/client/promise"
-import { NormalizedProviderListResponse } from "@opencode-ai/session-ui/context"
-import type { CommandInfo, McpResource, McpServer, SessionMessageInfo } from "@opencode-ai/client/promise"
+import type { FileDiffInfo } from "@botconnector/client/promise"
+import { NormalizedProviderListResponse } from "@botconnector/session-ui/context"
+import type { CommandInfo, McpResource, McpServer, SessionMessageInfo } from "@botconnector/client/promise"
 import type { Accessor } from "solid-js"
 import type { SetStoreFunction, Store } from "solid-js/store"
 

@@ -1,5 +1,5 @@
-import { EventV2 } from "@opencode-ai/core/event"
-import { OpenCodeEvent } from "@opencode-ai/protocol/groups/event"
+import { EventV2 } from "@botconnector/core/event"
+import { OpenCodeEvent } from "@botconnector/protocol/groups/event"
 import { Effect, Schema, Stream } from "effect"
 import { HttpServerResponse } from "effect/unstable/http"
 import { HttpApiBuilder } from "effect/unstable/httpapi"

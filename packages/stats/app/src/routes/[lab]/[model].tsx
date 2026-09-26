@@ -8,8 +8,8 @@ import {
   type ModelPeerEntry,
   type ModelUsagePoint,
   type StatsModelData,
-} from "@opencode-ai/stats-core/domain/home"
-import { statModel } from "@opencode-ai/stats-core/domain/model-normalization"
+} from "@botconnector/stats-core/domain/home"
+import { statModel } from "@botconnector/stats-core/domain/model-normalization"
 import { createAsync, query, useParams } from "@solidjs/router"
 import { createMemo, createSignal, createUniqueId, For, onMount, Show, type JSX } from "solid-js"
 import { getRequestEvent } from "solid-js/web"

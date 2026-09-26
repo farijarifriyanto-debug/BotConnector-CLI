@@ -22,11 +22,12 @@ function rewrite(request: Request, values: { directory?: string; workspace?: str
   let changed = false
 
   for (const [name, key] of [
-    ["x-opencode-directory", "directory"],
-    ["x-opencode-workspace", "workspace"],
+    ["x-botconnector-directory", "directory"],
+    ["x-botconnector-workspace", "workspace"],
   ] as const) {
+    const legacy = name.replace("x-botconnector-", "x-opencode-")
     const value = pick(
-      request.headers.get(name),
+      request.headers.get(name) ?? request.headers.get(legacy),
       key === "directory" ? values.directory : values.workspace,
       key === "directory" ? encodeURIComponent : undefined,
     )
@@ -42,6 +43,8 @@ function rewrite(request: Request, values: { directory?: string; workspace?: str
   if (!changed) return request
 
   const next = new Request(url, request)
+  next.headers.delete("x-botconnector-directory")
+  next.headers.delete("x-botconnector-workspace")
   next.headers.delete("x-opencode-directory")
   next.headers.delete("x-opencode-workspace")
   return next
@@ -63,14 +66,14 @@ export function createOpencodeClient(config?: Config & { directory?: string; exp
   if (config?.directory) {
     config.headers = {
       ...config.headers,
-      "x-opencode-directory": encodeURIComponent(config.directory),
+      "x-botconnector-directory": encodeURIComponent(config.directory),
     }
   }
 
   if (config?.experimental_workspaceID) {
     config.headers = {
       ...config.headers,
-      "x-opencode-workspace": config.experimental_workspaceID,
+      "x-botconnector-workspace": config.experimental_workspaceID,
     }
   }
 

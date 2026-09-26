@@ -1,5 +1,43 @@
 import { Config } from "effect"
 
+const legacyEnvironment = [
+  "OPENCODE_AUTO_HEAP_SNAPSHOT",
+  "OPENCODE_GIT_BASH_PATH",
+  "OPENCODE_DISABLE_AUTOUPDATE",
+  "OPENCODE_ALWAYS_NOTIFY_UPDATE",
+  "OPENCODE_DISABLE_PRUNE",
+  "OPENCODE_DISABLE_TERMINAL_TITLE",
+  "OPENCODE_SHOW_TTFD",
+  "OPENCODE_DISABLE_AUTOCOMPACT",
+  "OPENCODE_DISABLE_MODELS_FETCH",
+  "OPENCODE_DISABLE_MOUSE",
+  "OPENCODE_FAKE_VCS",
+  "OPENCODE_DISABLE_FFF",
+  "OPENCODE_EXPERIMENTAL",
+  "OPENCODE_EXPERIMENTAL_FILEWATCHER",
+  "OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER",
+  "OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT",
+  "OPENCODE_EXPERIMENTAL_REFERENCES",
+  "OPENCODE_EXPERIMENTAL_WORKSPACES",
+  "OPENCODE_MODELS_URL",
+  "OPENCODE_MODELS_PATH",
+  "OPENCODE_DB",
+  "OPENCODE_WORKSPACE_ID",
+  "OPENCODE_TUI_CONFIG",
+  "OPENCODE_PURE",
+  "OPENCODE_PLUGIN_META_FILE",
+  "OPENCODE_CLIENT",
+  "OPENCODE_PRINT_LOGS",
+  "OPENCODE_LOG_LEVEL",
+] as const
+
+for (const legacy of legacyEnvironment) {
+  const canonical = legacy.replace(/^OPENCODE_/, "BOTCONNECTOR_")
+  if (process.env[canonical] !== undefined && process.env[legacy] === undefined) {
+    process.env[legacy] = process.env[canonical]
+  }
+}
+
 export function truthy(key: string) {
   const value = process.env[key]?.toLowerCase()
   return value === "true" || value === "1"

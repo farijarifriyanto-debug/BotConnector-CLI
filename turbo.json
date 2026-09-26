@@ -13,11 +13,11 @@
       "outputs": [],
       "passThroughEnv": ["*"]
     },
-    "@opencode-ai/core#test": {
+    "@botconnector/core#test": {
       "dependsOn": ["^build"],
       "outputs": []
     },
-    "@opencode-ai/function#test": {
+    "@botconnector/function#test": {
       "outputs": []
     },
     "@opencode-ai/app#test": {
@@ -28,7 +28,7 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
-    "@opencode-ai/session-ui#test": {
+    "@botconnector/session-ui#test": {
       "dependsOn": ["^build"],
       "outputs": []
     }
