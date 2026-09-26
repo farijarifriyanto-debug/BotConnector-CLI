@@ -70,21 +70,16 @@ function migrateDefaultConfig() {
       changed = true
     }
 
-    // Older generated configs could contain an empty Gateway model map.
-    // Add only missing canonical models from the bundled default so custom
-    // user models and overrides remain untouched.
-    const bundledPath = path.join(__dirname, "..", "default-config", "botconnector-cloud.jsonc")
-    if (fs.existsSync(bundledPath)) {
-      const bundled = JSON.parse(fs.readFileSync(bundledPath, "utf8"))
-      const canonicalModels = bundled?.provider?.botconnector?.models
-      if (canonicalModels && typeof canonicalModels === "object") {
-        provider.models ??= {}
-        for (const [modelID, model] of Object.entries(canonicalModels)) {
-          if (provider.models[modelID] !== undefined) continue
-          provider.models[modelID] = model
-          changed = true
-        }
-      }
+    // BotConnector Gateway owns its model catalog. Remove any persisted model
+    // snapshot from older releases so stale IDs can never override GET /v1/models.
+    if (
+      !provider.models ||
+      typeof provider.models !== "object" ||
+      Array.isArray(provider.models) ||
+      Object.keys(provider.models).length > 0
+    ) {
+      provider.models = {}
+      changed = true
     }
 
     // 0.1.8-0.1.11 injected an exact { edit: "ask", bash: "ask" }
