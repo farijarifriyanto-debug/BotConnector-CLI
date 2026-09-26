@@ -1,6 +1,6 @@
 {
   "name": "bccli-linux-x64",
-  "version": "0.1.14-beta.1",
+  "version": "0.1.0-beta.1",
   "description": "BCCLI prebuilt binary for Linux x64. Not meant to be installed directly -- see the bccli package.",
   "license": "MIT",
   "repository": {

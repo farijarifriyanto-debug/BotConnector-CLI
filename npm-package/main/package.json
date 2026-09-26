@@ -1,6 +1,6 @@
 {
   "name": "bccli",
-  "version": "0.1.14-beta.1",
+  "version": "0.1.0-beta.1",
   "description": "BCCLI -- the BotConnector Cloud + Local AI CLI/TUI.",
   "license": "MIT",
   "homepage": "https://github.com/farijarifriyanto-debug/BotConnector-CLI",
@@ -23,7 +23,7 @@
     "node": ">=18"
   },
   "optionalDependencies": {
-    "bccli-win32-x64": "0.1.14-beta.1",
-    "bccli-linux-x64": "0.1.14-beta.1"
+    "bccli-win32-x64": "0.1.0-beta.1",
+    "bccli-linux-x64": "0.1.0-beta.1"
   }
 }
