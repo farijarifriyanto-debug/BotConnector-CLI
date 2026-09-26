@@ -1,13 +1,19 @@
 {
-  "name": "botconnector-cli-win32-x64",
-  "version": "0.1.13",
-  "description": "BotConnector CLI prebuilt binary for Windows x64. Not meant to be installed directly -- see the botconnector-cli package.",
+  "name": "bccli-win32-x64",
+  "version": "0.1.14-beta.1",
+  "description": "BCCLI prebuilt binary for Windows x64. Not meant to be installed directly -- see the bccli package.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/farijarifriyanto-debug/BotConnector-CLI.git"
   },
-  "os": ["win32"],
-  "cpu": ["x64"],
-  "files": ["botconnector.exe"]
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bccli.exe"
+  ]
 }

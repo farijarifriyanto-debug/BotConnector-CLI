@@ -1,7 +1,7 @@
-# botconnector-cli-linux-x64
+# bccli-linux-x64
 
-Prebuilt Linux x64 binary for `botconnector-cli`. Not meant to be installed
-directly -- install `botconnector-cli` instead, which pulls this in
+Prebuilt Linux x64 binary for `bccli`. Not meant to be installed
+directly -- install `bccli` instead, which pulls this in
 automatically as an `optionalDependency`.
 
 The `botconnector` binary itself is **not** committed to this repo

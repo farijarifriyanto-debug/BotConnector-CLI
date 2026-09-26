@@ -52,7 +52,7 @@ server.listen(0, "127.0.0.1", async () => {
       }
     }, null, 2) + "\n")
 
-    const launcher = path.resolve("node_modules/botconnector-cli/bin/botconnector.js")
+    const launcher = path.resolve("node_modules/bccli/bin/bccli.js")
     const child = spawn(process.execPath, [launcher, "models", "botconnector"], {
       cwd: process.cwd(),
       env: {

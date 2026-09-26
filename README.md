@@ -1,11 +1,11 @@
-# BotConnector CLI
+# BCCLI
 
-BotConnector is a local-first AI CLI/TUI for connecting cloud and local models from one terminal workflow.
+BCCLI is the BotConnector command-line AI client for connecting cloud and local models from one terminal workflow.
 
 ## Install
 
 ```bash
-npm install -g botconnector-cli
+npm install -g bccli
 botconnector --version
 ```
 

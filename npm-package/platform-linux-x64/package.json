@@ -1,13 +1,19 @@
 {
-  "name": "botconnector-cli-linux-x64",
-  "version": "0.1.13",
-  "description": "BotConnector CLI prebuilt binary for Linux x64. Not meant to be installed directly -- see the botconnector-cli package.",
+  "name": "bccli-linux-x64",
+  "version": "0.1.14-beta.1",
+  "description": "BCCLI prebuilt binary for Linux x64. Not meant to be installed directly -- see the bccli package.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/farijarifriyanto-debug/BotConnector-CLI.git"
   },
-  "os": ["linux"],
-  "cpu": ["x64"],
-  "files": ["botconnector"]
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bccli"
+  ]
 }

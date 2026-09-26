@@ -11,8 +11,8 @@ const path = require("path")
 const { spawnSync } = require("child_process")
 
 const PLATFORM_PACKAGES = {
-  win32: { pkg: "botconnector-cli-win32-x64", binName: "botconnector.exe" },
-  linux: { pkg: "botconnector-cli-linux-x64", binName: "botconnector" },
+  win32: { pkg: "bccli-win32-x64", binName: "bccli.exe" },
+  linux: { pkg: "bccli-linux-x64", binName: "bccli" },
 }
 
 // Seed the BotConnector Gateway provider config on first run. BotConnector
@@ -121,7 +121,7 @@ function resolveBinary() {
   const entry = PLATFORM_PACKAGES[process.platform]
   if (!entry) {
     console.error(
-      `botconnector-cli: unsupported platform "${process.platform}". Windows and Linux (x64) are the only prebuilt targets right now.`,
+      `bccli: unsupported platform "${process.platform}". Windows and Linux (x64) are the only prebuilt targets right now.`,
     )
     process.exit(1)
   }
@@ -130,9 +130,9 @@ function resolveBinary() {
     return path.join(path.dirname(pkgJsonPath), entry.binName)
   } catch {
     console.error(
-      `botconnector-cli: could not find ${entry.pkg} in node_modules.\n` +
+      `bccli: could not find ${entry.pkg} in node_modules.\n` +
         `This usually means optional dependencies were skipped during install.\n` +
-        `Try: npm install botconnector-cli --include=optional`,
+        `Try: npm install bccli --include=optional`,
     )
     process.exit(1)
   }
@@ -166,7 +166,7 @@ if (env.BOTCONNECTOR_SERVER_PASSWORD && !env.OPENCODE_SERVER_PASSWORD) {
 const result = spawnSync(binPath, process.argv.slice(2), { stdio: "inherit", env })
 
 if (result.error) {
-  console.error(`botconnector-cli: failed to launch ${binPath}: ${result.error.message}`)
+  console.error(`bccli: failed to launch ${binPath}: ${result.error.message}`)
   process.exit(1)
 }
 
