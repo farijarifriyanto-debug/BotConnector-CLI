@@ -7,7 +7,7 @@ import { Process } from "@/util/process"
 
 const MANAGED_PLIST_DOMAIN = "ai.botconnector.managed"
 
-// Keys injected by macOS/MDM into the managed plist that are not OpenCode config
+// Keys injected by macOS/MDM into the managed plist that are not upstream engine config
 const PLIST_META = new Set([
   "PayloadDisplayName",
   "PayloadIdentifier",

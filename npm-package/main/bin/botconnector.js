@@ -84,7 +84,7 @@ function migrateDefaultConfig() {
 
     // 0.1.8-0.1.11 injected an exact { edit: "ask", bash: "ask" }
     // permission block into generated configs. Remove only that proven legacy
-    // shape so existing users regain upstream OpenCode defaults without
+    // shape so existing users regain upstream upstream engine defaults without
     // clobbering any custom permission policy.
     const permission = config.permission
     if (
@@ -144,7 +144,7 @@ migrateDefaultConfig()
 const binPath = resolveBinary()
 const env = { ...process.env }
 
-// BotConnector owns config resolution. Legacy OpenCode config variables from
+// BotConnector owns config resolution. Legacy upstream engine config variables from
 // older installs must never silently override BotConnector's canonical config.
 delete env.OPENCODE_CONFIG
 delete env.OPENCODE_CONFIG_DIR
