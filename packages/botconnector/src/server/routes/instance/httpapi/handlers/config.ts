@@ -1,5 +1,6 @@
 import { Config } from "@/config/config"
 import { Provider } from "@/provider/provider"
+import { ProviderV2 } from "@botconnector/core/provider"
 import * as InstanceState from "@/effect/instance-state"
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
@@ -22,6 +23,7 @@ export const configHandlers = HttpApiBuilder.group(InstanceHttpApi, "config", (h
     })
 
     const providers = Effect.fn("ConfigHttpApi.providers")(function* () {
+      yield* providerSvc.discover(ProviderV2.ID.make("botconnector"))
       const providers = yield* providerSvc.list()
       return {
         providers: Object.values(providers).map(Provider.toPublicInfo),

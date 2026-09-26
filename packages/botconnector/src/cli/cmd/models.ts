@@ -31,6 +31,9 @@ export const ModelsCommand = effectCmd({
     }
 
     const provider = yield* Provider.Service
+    if (!args.provider || args.provider === "botconnector") {
+      yield* provider.discover(ProviderV2.ID.make("botconnector"))
+    }
     const providers = yield* provider.list()
 
     const print = (providerID: ProviderV2.ID, verbose?: boolean) => {

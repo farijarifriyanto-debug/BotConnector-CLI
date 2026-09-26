@@ -1194,6 +1194,7 @@ export type Error = ModelNotFoundError | InitError | NoProvidersError | NoModels
 
 export interface Interface {
   readonly list: () => Effect.Effect<Record<ProviderV2.ID, Info>>
+  readonly discover: (providerID: ProviderV2.ID) => Effect.Effect<void>
   readonly getProvider: (providerID: ProviderV2.ID) => Effect.Effect<Info>
   readonly getModel: (providerID: ProviderV2.ID, modelID: ModelV2.ID) => Effect.Effect<Model, ModelNotFoundError>
   readonly getLanguage: (model: Model) => Effect.Effect<LanguageModelV3, ModelNotFoundError>
@@ -1212,6 +1213,7 @@ interface State {
   sdk: Map<string, BundledSDK>
   modelLoaders: Record<string, CustomModelLoader>
   varsLoaders: Record<string, CustomVarsLoader>
+  discoveredProviders: Set<ProviderV2.ID>
 }
 
 export class Service extends Context.Service<Service, Interface>()("@botconnector/Provider") {}
@@ -1587,86 +1589,12 @@ const layer = Layer.effect(
 
         const envs = yield* env.all()
 
-        // BotConnector Gateway is server-authoritative. Never trust a packaged or
-        // persisted model snapshot: replace it with the authenticated live catalog
-        // from GET /v1/models on every CLI process start.
+        // BotConnector Gateway is server-authoritative. Clear every packaged or
+        // persisted snapshot, but do not contact Cloud during provider startup.
+        // Live discovery is demand-driven so explicit Local inference stays private.
         const botconnectorID = ProviderV2.ID.make("botconnector")
         const botconnector = database[botconnectorID]
-        const botconnectorBaseURL = botconnector?.options?.baseURL
-        if (botconnector && typeof botconnectorBaseURL === "string") {
-          botconnector.models = {}
-          const apiKey = botconnector.env.map((item) => envs[item]).find(Boolean)
-          if (apiKey) {
-            yield* Effect.promise(async () => {
-              try {
-                const modelsURL = new URL(botconnectorBaseURL.replace(/\/+$/, "") + "/models")
-                const response = await fetch(modelsURL, {
-                  headers: {
-                    accept: "application/json",
-                    authorization: `Bearer ${apiKey}`,
-                  },
-                  signal: AbortSignal.timeout(3000),
-                })
-                if (!response.ok) return
-                const payload = await response.json()
-                if (!isRecord(payload) || !Array.isArray(payload["data"])) return
-
-                const discovered: Record<string, Model> = {}
-                for (const raw of payload["data"]) {
-                  if (!isRecord(raw)) continue
-                  const modelID = typeof raw["id"] === "string" ? raw["id"].trim() : ""
-                  if (!modelID) continue
-                  const name =
-                    typeof raw["name"] === "string"
-                      ? raw["name"]
-                      : typeof raw["display_name"] === "string"
-                        ? raw["display_name"]
-                        : modelID
-                  const context =
-                    typeof raw["context_length"] === "number" && Number.isFinite(raw["context_length"])
-                      ? raw["context_length"]
-                      : typeof raw["context_window"] === "number" && Number.isFinite(raw["context_window"])
-                        ? raw["context_window"]
-                        : 32_768
-                  const output =
-                    typeof raw["max_output_tokens"] === "number" && Number.isFinite(raw["max_output_tokens"])
-                      ? raw["max_output_tokens"]
-                      : typeof raw["max_tokens"] === "number" && Number.isFinite(raw["max_tokens"])
-                        ? raw["max_tokens"]
-                        : 8_192
-
-                  discovered[modelID] = {
-                    id: ModelV2.ID.make(modelID),
-                    providerID: botconnectorID,
-                    name,
-                    family: typeof raw["family"] === "string" ? raw["family"] : "cloud",
-                    api: { id: modelID, url: botconnectorBaseURL, npm: "@ai-sdk/openai-compatible" },
-                    status: "active",
-                    headers: {},
-                    options: {},
-                    cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-                    limit: { context: Math.max(1, context), output: Math.max(1, output) },
-                    capabilities: {
-                      temperature: true,
-                      reasoning: false,
-                      attachment: false,
-                      toolcall: true,
-                      input: { text: true, audio: false, image: false, video: false, pdf: false },
-                      output: { text: true, audio: false, image: false, video: false, pdf: false },
-                      interleaved: false,
-                    },
-                    release_date: "",
-                    variants: {},
-                  }
-                }
-
-                if (Object.keys(discovered).length > 0) botconnector.models = discovered
-              } catch {
-                // Cloud catalog failure must not resurrect stale packaged model IDs.
-              }
-            })
-          }
-        }
+        if (botconnector) botconnector.models = {}
 
         // BotConnector Local: discover Ollama models only from loopback. Remote
         // Ollama endpoints and :cloud aliases must never be presented as Local.
@@ -1850,7 +1778,7 @@ const layer = Layer.effect(
             }
           }
 
-          if (Object.keys(provider.models).length === 0) {
+          if (Object.keys(provider.models).length === 0 && providerID !== botconnectorID) {
             delete providers[providerID]
             continue
           }
@@ -1863,9 +1791,92 @@ const layer = Layer.effect(
           sdk,
           modelLoaders,
           varsLoaders,
+          discoveredProviders: new Set<ProviderV2.ID>(),
         }
       }),
     )
+
+    const discover = Effect.fn("Provider.discover")(function* (providerID: ProviderV2.ID) {
+      if (providerID !== ProviderV2.ID.make("botconnector")) return
+      const s = yield* InstanceState.get(state)
+      const provider = s.providers[providerID]
+      if (!provider || s.discoveredProviders.has(providerID)) return
+
+      const baseURL = provider.options?.baseURL
+      const apiKey = provider.key
+      if (typeof baseURL !== "string" || typeof apiKey !== "string" || !apiKey) return
+      s.discoveredProviders.add(providerID)
+
+      const discovered = yield* Effect.promise(async () => {
+        try {
+          const modelsURL = new URL(baseURL.replace(/\/+$/, "") + "/models")
+          const response = await fetch(modelsURL, {
+            headers: {
+              accept: "application/json",
+              authorization: `Bearer ${apiKey}`,
+            },
+            signal: AbortSignal.timeout(3000),
+          })
+          if (!response.ok) return {} as Record<string, Model>
+          const payload = await response.json()
+          if (!isRecord(payload) || !Array.isArray(payload["data"])) return {} as Record<string, Model>
+
+          const models: Record<string, Model> = {}
+          for (const raw of payload["data"]) {
+            if (!isRecord(raw)) continue
+            const modelID = typeof raw["id"] === "string" ? raw["id"].trim() : ""
+            if (!modelID) continue
+            const name =
+              typeof raw["name"] === "string"
+                ? raw["name"]
+                : typeof raw["display_name"] === "string"
+                  ? raw["display_name"]
+                  : modelID
+            const context =
+              typeof raw["context_length"] === "number" && Number.isFinite(raw["context_length"])
+                ? raw["context_length"]
+                : typeof raw["context_window"] === "number" && Number.isFinite(raw["context_window"])
+                  ? raw["context_window"]
+                  : 32_768
+            const output =
+              typeof raw["max_output_tokens"] === "number" && Number.isFinite(raw["max_output_tokens"])
+                ? raw["max_output_tokens"]
+                : typeof raw["max_tokens"] === "number" && Number.isFinite(raw["max_tokens"])
+                  ? raw["max_tokens"]
+                  : 8_192
+
+            models[modelID] = {
+              id: ModelV2.ID.make(modelID),
+              providerID,
+              name,
+              family: typeof raw["family"] === "string" ? raw["family"] : "cloud",
+              api: { id: modelID, url: baseURL, npm: "@ai-sdk/openai-compatible" },
+              status: "active",
+              headers: {},
+              options: {},
+              cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+              limit: { context: Math.max(1, context), output: Math.max(1, output) },
+              capabilities: {
+                temperature: true,
+                reasoning: false,
+                attachment: false,
+                toolcall: true,
+                input: { text: true, audio: false, image: false, video: false, pdf: false },
+                output: { text: true, audio: false, image: false, video: false, pdf: false },
+                interleaved: false,
+              },
+              release_date: "",
+              variants: {},
+            }
+          }
+          return models
+        } catch {
+          return {} as Record<string, Model>
+        }
+      })
+
+      provider.models = discovered
+    })
 
     const list = Effect.fn("Provider.list")(() => InstanceState.use(state, (s) => s.providers))
 
@@ -2003,11 +2014,13 @@ const layer = Layer.effect(
       }
     }
 
-    const getProvider = Effect.fn("Provider.getProvider")((providerID: ProviderV2.ID) =>
-      InstanceState.use(state, (s) => s.providers[providerID]),
-    )
+    const getProvider = Effect.fn("Provider.getProvider")(function* (providerID: ProviderV2.ID) {
+      yield* discover(providerID)
+      return yield* InstanceState.use(state, (s) => s.providers[providerID])
+    })
 
     const getModel = Effect.fn("Provider.getModel")(function* (providerID: ProviderV2.ID, modelID: ModelV2.ID) {
+      yield* discover(providerID)
       const s = yield* InstanceState.get(state)
       const provider = s.providers[providerID]
       if (!provider) {
@@ -2074,6 +2087,7 @@ const layer = Layer.effect(
     })
 
     const closest = Effect.fn("Provider.closest")(function* (providerID: ProviderV2.ID, query: string[]) {
+      yield* discover(providerID)
       const s = yield* InstanceState.get(state)
       const provider = s.providers[providerID]
       if (!provider) return undefined
@@ -2086,6 +2100,7 @@ const layer = Layer.effect(
     })
 
     const getSmallModel = Effect.fn("Provider.getSmallModel")(function* (providerID: ProviderV2.ID) {
+      yield* discover(providerID)
       const cfg = yield* config.get()
 
       if (cfg.small_model) {
@@ -2158,6 +2173,7 @@ const layer = Layer.effect(
       const cfg = yield* config.get()
       if (cfg.model) return parseModel(cfg.model)
 
+      yield* discover(ProviderV2.ID.make("botconnector"))
       const s = yield* InstanceState.get(state)
 
       // The canonical BotConnector Gateway wins over stale upstream model history.
@@ -2198,7 +2214,7 @@ const layer = Layer.effect(
       }
     })
 
-    return Service.of({ list, getProvider, getModel, getLanguage, closest, getSmallModel, defaultModel })
+    return Service.of({ list, discover, getProvider, getModel, getLanguage, closest, getSmallModel, defaultModel })
   }),
 )
 
