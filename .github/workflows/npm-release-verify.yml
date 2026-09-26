@@ -215,7 +215,17 @@ jobs:
           POISON="$PWD/legacy-opencode-config.jsonc"
           printf '%s\n' '{"provider":{"opencode":{"models":{"poison":{"name":"POISON"}}}}}' > "$POISON"
           export OPENCODE_CONFIG="$POISON"
-          npx --no-install botconnector models botconnector | grep -q '^botconnector/'
+          # Cloud models are authenticated and loaded live from /v1/models, so an
+          # install smoke must not require an API key merely to prove isolation.
+          # Instead, assert that the legacy OpenCode config cannot surface its
+          # poison provider/model through the BotConnector launcher.
+          set +e
+          POISON_OUT="$(npx --no-install botconnector models opencode 2>&1)"
+          set -e
+          if printf '%s\n' "$POISON_OUT" | grep -q 'POISON'; then
+            echo "::error::Legacy OpenCode config overrode BotConnector config"
+            exit 1
+          fi
 
           HELP="$(npx --no-install botconnector --help)"
           if printf '%s\n' "$HELP" | grep -Eqi 'start opencode tui|run opencode with a message|starts a headless opencode server|uninstall opencode|opencode\.local'; then
