@@ -1585,6 +1585,89 @@ const layer = Layer.effect(
           database[providerID] = parsed
         }
 
+        const envs = yield* env.all()
+
+        // BotConnector Gateway is server-authoritative. Never trust a packaged or
+        // persisted model snapshot: replace it with the authenticated live catalog
+        // from GET /v1/models on every CLI process start.
+        const botconnectorID = ProviderV2.ID.make("botconnector")
+        const botconnector = database[botconnectorID]
+        const botconnectorBaseURL = botconnector?.options?.baseURL
+        if (botconnector && typeof botconnectorBaseURL === "string") {
+          botconnector.models = {}
+          const apiKey = botconnector.env.map((item) => envs[item]).find(Boolean)
+          if (apiKey) {
+            yield* Effect.promise(async () => {
+              try {
+                const modelsURL = new URL(botconnectorBaseURL.replace(/\\/+$/, "") + "/models")
+                const response = await fetch(modelsURL, {
+                  headers: {
+                    accept: "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                  },
+                  signal: AbortSignal.timeout(3000),
+                })
+                if (!response.ok) return
+                const payload = await response.json()
+                if (!isRecord(payload) || !Array.isArray(payload["data"])) return
+
+                const discovered: Record<string, Model> = {}
+                for (const raw of payload["data"]) {
+                  if (!isRecord(raw)) continue
+                  const modelID = typeof raw["id"] === "string" ? raw["id"].trim() : ""
+                  if (!modelID) continue
+                  const name =
+                    typeof raw["name"] === "string"
+                      ? raw["name"]
+                      : typeof raw["display_name"] === "string"
+                        ? raw["display_name"]
+                        : modelID
+                  const context =
+                    typeof raw["context_length"] === "number" && Number.isFinite(raw["context_length"])
+                      ? raw["context_length"]
+                      : typeof raw["context_window"] === "number" && Number.isFinite(raw["context_window"])
+                        ? raw["context_window"]
+                        : 32_768
+                  const output =
+                    typeof raw["max_output_tokens"] === "number" && Number.isFinite(raw["max_output_tokens"])
+                      ? raw["max_output_tokens"]
+                      : typeof raw["max_tokens"] === "number" && Number.isFinite(raw["max_tokens"])
+                        ? raw["max_tokens"]
+                        : 8_192
+
+                  discovered[modelID] = {
+                    id: ModelV2.ID.make(modelID),
+                    providerID: botconnectorID,
+                    name,
+                    family: typeof raw["family"] === "string" ? raw["family"] : "cloud",
+                    api: { id: modelID, url: botconnectorBaseURL, npm: "@ai-sdk/openai-compatible" },
+                    status: "active",
+                    headers: {},
+                    options: {},
+                    cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+                    limit: { context: Math.max(1, context), output: Math.max(1, output) },
+                    capabilities: {
+                      temperature: true,
+                      reasoning: false,
+                      attachment: false,
+                      toolcall: true,
+                      input: { text: true, audio: false, image: false, video: false, pdf: false },
+                      output: { text: true, audio: false, image: false, video: false, pdf: false },
+                      interleaved: false,
+                    },
+                    release_date: "",
+                    variants: {},
+                  }
+                }
+
+                if (Object.keys(discovered).length > 0) botconnector.models = discovered
+              } catch {
+                // Cloud catalog failure must not resurrect stale packaged model IDs.
+              }
+            })
+          }
+        }
+
         // BotConnector Local: discover Ollama models only from loopback. Remote
         // Ollama endpoints and :cloud aliases must never be presented as Local.
         const ollamaID = ProviderV2.ID.make("ollama")
@@ -1635,8 +1718,7 @@ const layer = Layer.effect(
           })
         }
 
-        // load env
-        const envs = yield* env.all()
+        // load env-backed providers using the same snapshot used for live catalog discovery
         for (const [id, provider] of Object.entries(database)) {
           const providerID = ProviderV2.ID.make(id)
           if (disabled.has(providerID)) continue
