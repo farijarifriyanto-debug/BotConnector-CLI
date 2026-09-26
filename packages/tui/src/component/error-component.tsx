@@ -206,7 +206,7 @@ function buildIssueURL(message: string, stack: string) {
   // the contributing-guidelines compliance check, which pushes for system info.
   const url = new URL("https://github.com/farijarifriyanto-debug/BotConnector-CLI/issues/new?template=bug-report.yml")
   url.searchParams.set("title", `TUI crash: ${message}`)
-  url.searchParams.set("opencode-version", InstallationVersion)
+  url.searchParams.set("botconnector-version", InstallationVersion)
   url.searchParams.set("os", describeOS())
   url.searchParams.set("terminal", describeTerminal())
   url.searchParams.set(
