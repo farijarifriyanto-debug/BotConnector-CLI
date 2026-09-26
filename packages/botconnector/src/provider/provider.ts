@@ -1589,11 +1589,22 @@ const layer = Layer.effect(
 
         // BotConnector Gateway is server-authoritative. Never trust a packaged or
         // persisted model snapshot: replace it with the authenticated live catalog
-        // from GET /v1/models on every CLI process start.
+        // from GET /v1/models when Cloud catalog access is needed. Local-only commands stay offline.
         const botconnectorID = ProviderV2.ID.make("botconnector")
         const botconnector = database[botconnectorID]
         const botconnectorBaseURL = botconnector?.options?.baseURL
-        if (botconnector && typeof botconnectorBaseURL === "string") {
+        const argv = process.argv.slice(2)
+        const modelArg = (() => {
+          const short = argv.indexOf("-m")
+          if (short >= 0) return argv[short + 1]
+          const long = argv.indexOf("--model")
+          if (long >= 0) return argv[long + 1]
+          return argv.find((item) => item.startsWith("--model="))?.slice("--model=".length)
+        })()
+        const modelsCommand = argv.indexOf("models")
+        const providerArg = modelsCommand >= 0 ? argv[modelsCommand + 1] : undefined
+        const localOnly = modelArg?.startsWith("ollama/") === true || providerArg === "ollama"
+        if (!localOnly && botconnector && typeof botconnectorBaseURL === "string") {
           botconnector.models = {}
           const apiKey = botconnector.env.map((item) => envs[item]).find(Boolean)
           if (apiKey) {
