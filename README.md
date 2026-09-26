@@ -14,6 +14,11 @@ botconnector --version
 The npm launcher seeds the canonical config at `~/.config/botconnector/botconnector-cloud.jsonc`.
 Set `BOTCONNECTOR_API_KEY` to use the BotConnector Gateway.
 
+The Cloud model catalog is not pinned in the npm package. On each CLI process start,
+BotConnector loads the authenticated live catalog from `GET https://api.botconnector.id/v1/models`.
+That endpoint is the source of truth for Cloud model availability; if it is unavailable,
+BotConnector does not resurrect stale packaged model IDs.
+
 ```bash
 export BOTCONNECTOR_API_KEY=...
 botconnector models botconnector
