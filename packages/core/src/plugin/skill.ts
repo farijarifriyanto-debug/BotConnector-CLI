@@ -21,7 +21,7 @@ export const Plugin = define({
           skill: SkillV2.Info.make({
             name: "customize-botconnector",
             description:
-              "Use ONLY when the user is editing or creating BotConnector's own configuration: botconnector.json, botconnector.jsonc, files under .botconnector/, or files under ~/.config/botconnector/. Also use when creating or fixing opencode agents, subagents, commands, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring BotConnector itself.",
+              "Use ONLY when the user is editing or creating BotConnector's own configuration: botconnector.json, botconnector.jsonc, files under .botconnector/, or files under ~/.config/botconnector/. Also use when creating or fixing BotConnector agents, subagents, commands, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring BotConnector itself.",
             location: AbsolutePath.make("/builtin/customize-botconnector.md"),
             content: CustomizeBotConnectorContent,
           }),

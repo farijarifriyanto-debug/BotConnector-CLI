@@ -9,7 +9,7 @@ export function publish(port: number, domain?: string) {
 
   try {
     const host = domain ?? "botconnector.local"
-    const name = `opencode-${port}`
+    const name = `botconnector-${port}`
     bonjour = new Bonjour()
     const service = bonjour.publish({
       name,

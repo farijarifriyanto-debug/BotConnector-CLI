@@ -5,7 +5,7 @@ import { NonNegativeInt } from "@botconnector/core/schema"
 import { Global } from "@botconnector/core/global"
 import { FSUtil } from "@botconnector/core/fs-util"
 
-export const OAUTH_DUMMY_KEY = "opencode-oauth-dummy-key"
+export const OAUTH_DUMMY_KEY = "botconnector-oauth-dummy-key"
 
 const file = path.join(Global.Path.data, "auth.json")
 

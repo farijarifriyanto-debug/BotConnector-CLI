@@ -116,8 +116,8 @@ const appBindingCommands = [
   "variant.cycle",
   "variant.list",
   "provider.connect",
-  "opencode.status",
-  "opencode.debug",
+  "botconnector.status",
+  "botconnector.debug",
   "theme.switch",
   "theme.switch_mode",
   "theme.mode.lock",
@@ -746,7 +746,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         category: "Provider",
       },
       {
-        name: "opencode.status",
+        name: "botconnector.status",
         title: "View status",
         slashName: "status",
         run: () => {
@@ -755,7 +755,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         category: "System",
       },
       {
-        name: "opencode.debug",
+        name: "botconnector.debug",
         title: "View debug info",
         slashName: "debug",
         run: () => {

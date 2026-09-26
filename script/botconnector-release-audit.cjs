@@ -382,5 +382,28 @@ for (const name of ["BOTCONNECTOR_VERSION", "BOTCONNECTOR_PLUGIN_VERSION", "BOTC
   if (!buildSource.includes(name)) fail(`BotConnector build does not define ${name}`)
 }
 
+const upstreamRuntimeFiles = [
+  "packages/core/src/models-dev.ts",
+  "packages/core/src/plugin/provider/openrouter.ts",
+  "packages/core/src/plugin/provider/kilo.ts",
+  "packages/core/src/plugin/provider/zenmux.ts",
+  "packages/core/src/plugin/provider/llmgateway.ts",
+  "packages/core/src/plugin/provider/vercel.ts",
+  "packages/core/src/plugin/provider/nvidia.ts",
+  "packages/core/src/plugin/provider/cerebras.ts",
+  "packages/core/src/oauth/page.ts",
+  "packages/botconnector/src/server/mdns.ts",
+  "packages/botconnector/src/server/routes/instance/httpapi/groups/global.ts",
+]
+for (const path of upstreamRuntimeFiles) {
+  const body = read(path)
+  for (const needle of ["https://opencode.ai", "models.opencode.ai", "OpenCode Go", "OpenCode Zen", "Upgrade opencode"]) {
+    if (body.includes(needle)) fail(`${path} still contains upstream runtime identity: ${needle}`)
+  }
+}
+if (read("packages/core/src/plugin/provider.ts").includes("OpencodePlugin")) fail("built-in OpenCode provider is still enabled")
+if (fs.existsSync("packages/core/src/plugin/provider/opencode.ts")) fail("built-in OpenCode provider implementation still exists")
+if (!read("packages/core/src/models-dev.ts").includes('"https://models.dev"')) fail("neutral models metadata source is missing")
+
 if (process.exitCode) process.exit(process.exitCode)
 console.log("BOTCONNECTOR_RELEASE_AUDIT_PASS")
