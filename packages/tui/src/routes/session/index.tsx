@@ -72,7 +72,7 @@ import { sessionEpilogue } from "../../util/presentation"
 import { setPreLayoutSiblingMargin } from "../../util/layout"
 import { useTuiConfig } from "../../config"
 import { useClipboard } from "../../context/clipboard"
-import { nextThinkingMode, reasoningSummary, useThinkingMode, type ThinkingMode } from "../../context/thinking"
+import { nextThinkingMode, reasoningSummary, splitEmbeddedThinking, useThinkingMode, type ThinkingMode } from "../../context/thinking"
 import { getScrollAcceleration } from "../../util/scroll"
 import { collapseToolOutput } from "../../util/collapse-tool-output"
 import { usePluginRuntime } from "../../plugin/runtime"
@@ -1685,19 +1685,59 @@ function ReasoningHeader(props: {
 function TextPart(props: { last: boolean; part: TextPart; message: AssistantMessage }) {
   const ctx = use()
   const { theme, syntax } = useTheme()
+  const [embeddedExpanded, setEmbeddedExpanded] = createSignal(false)
+  const parsed = createMemo(() => splitEmbeddedThinking(props.part.text))
+  const inMinimal = createMemo(() => ctx.thinkingMode() === "hide")
+  const embeddedOpen = createMemo(() => !inMinimal() || embeddedExpanded())
+  const embeddedSummary = createMemo(() => reasoningSummary(parsed().reasoning))
+  const embeddedSyntax = createSyntaxStyleMemo(() => generateSubtleSyntax(theme))
+  const toggleEmbedded = () => {
+    if (!inMinimal() || !parsed().hasThinking) return
+    setEmbeddedExpanded((prev) => !prev)
+  }
+
   return (
-    <Show when={props.part.text.trim()}>
-      <box ref={(el: BoxRenderable) => alwaysSeparate.add(el)} paddingLeft={3} marginTop={1} flexShrink={0}>
-        <markdown
-          syntaxStyle={syntax()}
-          streaming={true}
-          internalBlockMode="top-level"
-          content={props.part.text.trim()}
-          tableOptions={{ style: "grid" }}
-          conceal={ctx.conceal()}
-          fg={theme.markdownText}
-          bg={theme.background}
-        />
+    <Show when={parsed().hasThinking || parsed().answer}>
+      <box ref={(el: BoxRenderable) => alwaysSeparate.add(el)} flexDirection="column" flexShrink={0}>
+        <Show when={parsed().hasThinking && parsed().reasoning}>
+          <box paddingLeft={3} marginTop={1} flexDirection="column" flexShrink={0}>
+            <box onMouseUp={toggleEmbedded}>
+              <ReasoningHeader
+                toggleable={inMinimal()}
+                open={embeddedOpen()}
+                done={parsed().closed}
+                title={embeddedSummary().title}
+              />
+            </box>
+            <Show when={embeddedOpen() && embeddedSummary().body}>
+              <box paddingLeft={inMinimal() ? 2 : 0} marginTop={1}>
+                <code
+                  filetype="markdown"
+                  drawUnstyledText={false}
+                  streaming={true}
+                  syntaxStyle={embeddedSyntax()}
+                  content={embeddedSummary().body}
+                  conceal={ctx.conceal()}
+                  fg={theme.textMuted}
+                />
+              </box>
+            </Show>
+          </box>
+        </Show>
+        <Show when={parsed().answer}>
+          <box paddingLeft={3} marginTop={1} flexShrink={0}>
+            <markdown
+              syntaxStyle={syntax()}
+              streaming={true}
+              internalBlockMode="top-level"
+              content={parsed().answer}
+              tableOptions={{ style: "grid" }}
+              conceal={ctx.conceal()}
+              fg={theme.markdownText}
+              bg={theme.background}
+            />
+          </box>
+        </Show>
       </box>
     </Show>
   )
