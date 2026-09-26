@@ -86,13 +86,16 @@ jobs:
         run: |
           set -euo pipefail
           unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
+          V="${{ inputs.version }}"
+          TAG="latest"
+          [[ "$V" == *-* ]] && TAG="beta"
           verify_oidc() {
             local dir="$1"
             local pkg
             pkg=$(node -p "require('./${dir}/package.json').name")
             echo "::group::OIDC preflight ${pkg}"
             set +e
-            out=$(npm publish "./${dir}" --dry-run --loglevel verbose 2>&1)
+            out=$(npm publish "./${dir}" --dry-run --tag "$TAG" --loglevel verbose 2>&1)
             rc=$?
             set -e
             printf '%s\n' "$out" | grep -E 'npm verbose oidc|npm http fetch|ENEEDAUTH|E404|trusted' || true
