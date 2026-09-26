@@ -219,7 +219,7 @@ for (const path of boundaryFiles) {
 }
 
 const installation = read("packages/botconnector/src/installation/index.ts")
-if (!installation.includes("npm install -g bccli@")) fail("curl upgrade path does not point users to BCCLI npm")
+if (!installation.includes("npm install -g @botconnector/bccli@")) fail("curl upgrade path does not point users to BCCLI npm")
 if (!installation.includes('"farijarifriyanto-debug/tap"')) fail("Homebrew upgrade does not use the BotConnector tap")
 
 const providerHeaders = read("packages/botconnector/src/provider/provider.ts")
