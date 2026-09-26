@@ -250,7 +250,7 @@ jobs:
           path: artifacts/main
           run-id: ${{ inputs.reuse_run_id || github.run_id }}
           github-token: ${{ github.token }}
-      - name: Publish bccli with npm trusted publishing
+      - name: Publish @botconnector/bccli with npm trusted publishing
         shell: bash
         run: |
           set -euo pipefail
@@ -258,8 +258,8 @@ jobs:
           V="${{ inputs.version }}"
           TAG="latest"
           [[ "$V" == *-* ]] && TAG="beta"
-          if npm view "bccli@${V}" version >/dev/null 2>&1; then
-            echo "bccli@${V} already exists; skipping"
+          if npm view "@botconnector/bccli@${V}" version >/dev/null 2>&1; then
+            echo "@botconnector/bccli@${V} already exists; skipping"
           else
             npm publish "$(find artifacts/main -name '*.tgz' -type f | head -1)" --access public --provenance --tag "$TAG"
           fi
@@ -269,11 +269,11 @@ jobs:
           set -euo pipefail
           V="${{ inputs.version }}"
           for i in {1..36}; do
-            MAIN=$(npm view "bccli@${V}" version 2>/dev/null || true)
+            MAIN=$(npm view "@botconnector/bccli@${V}" version 2>/dev/null || true)
             LINUX=$(npm view "bccli-linux-x64@${V}" version 2>/dev/null || true)
             WIN=$(npm view "bccli-win32-x64@${V}" version 2>/dev/null || true)
             if [ "$MAIN" = "$V" ] && [ "$LINUX" = "$V" ] && [ "$WIN" = "$V" ]; then
-              echo "Published bccli@${V} and both platform packages."
+              echo "Published @botconnector/bccli@${V} and both platform packages."
               exit 0
             fi
             sleep 5

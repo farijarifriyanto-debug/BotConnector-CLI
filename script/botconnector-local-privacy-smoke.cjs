@@ -59,7 +59,7 @@ const ollama = http.createServer((req, res) => {
 
 const runCli = (args, env) =>
   new Promise((resolve, reject) => {
-    const launcher = path.resolve("node_modules/bccli/bin/bccli.js")
+    const launcher = path.resolve("node_modules/@botconnector/bccli/bin/bccli.js")
     const child = spawn(process.execPath, [launcher, ...args], {
       env: { ...process.env, ...env },
       stdio: ["ignore", "pipe", "pipe"],

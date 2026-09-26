@@ -1,5 +1,5 @@
 {
-  "name": "bccli",
+  "name": "@botconnector/bccli",
   "version": "0.1.0-beta.1",
   "description": "BCCLI -- the BotConnector Cloud + Local AI CLI/TUI.",
   "license": "MIT",

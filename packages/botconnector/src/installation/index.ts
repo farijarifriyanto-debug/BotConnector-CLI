@@ -141,7 +141,7 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
       function* (target: string) {
         return yield* new UpgradeFailedError({
           stderr:
-            "BotConnector does not publish a curl installer yet. Upgrade with npm, pnpm, or bun instead (for example: npm install -g bccli@" +
+            "BotConnector does not publish a curl installer yet. Upgrade with npm, pnpm, or bun instead (for example: npm install -g @botconnector/bccli@" +
             target +
             ").",
         })
@@ -188,7 +188,7 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
           const installedName =
             check.name === "brew" || check.name === "choco" || check.name === "scoop"
               ? "botconnector"
-              : "bccli"
+              : "@botconnector/bccli"
           if (output.includes(installedName)) {
             return check.name
           }
@@ -218,7 +218,7 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
         if (detectedMethod === "npm" || detectedMethod === "bun" || detectedMethod === "pnpm") {
           const response = yield* httpOk.execute(
             HttpClientRequest.get(
-              `${yield* NpmConfig.registry(process.cwd())}/bccli/${InstallationChannel}`,
+              `${yield* NpmConfig.registry(process.cwd())}/@botconnector%2Fbccli/${InstallationChannel}`,
             ).pipe(HttpClientRequest.acceptJson),
           )
           const data = yield* HttpClientResponse.schemaBodyJson(NpmPackage)(response)
@@ -260,13 +260,13 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
             upgradeResult = yield* upgradeCurl(target)
             break
           case "npm":
-            upgradeResult = yield* run(["npm", "install", "-g", `bccli@${target}`])
+            upgradeResult = yield* run(["npm", "install", "-g", `@botconnector/bccli@${target}`])
             break
           case "pnpm":
-            upgradeResult = yield* run(["pnpm", "install", "-g", `bccli@${target}`])
+            upgradeResult = yield* run(["pnpm", "install", "-g", `@botconnector/bccli@${target}`])
             break
           case "bun":
-            upgradeResult = yield* run(["bun", "install", "-g", `bccli@${target}`])
+            upgradeResult = yield* run(["bun", "install", "-g", `@botconnector/bccli@${target}`])
             break
           case "brew": {
             const formula = yield* getBrewFormula()

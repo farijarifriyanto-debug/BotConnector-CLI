@@ -5,7 +5,7 @@ BCCLI is the BotConnector command-line AI client for connecting cloud and local 
 ## Install
 
 ```bash
-npm install -g bccli
+npm install -g @botconnector/bccli
 botconnector --version
 ```
 
