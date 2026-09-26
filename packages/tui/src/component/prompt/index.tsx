@@ -1450,7 +1450,7 @@ export function Prompt(props: PromptProps) {
                         {store.mode === "shell" ? "Shell" : Locale.titlecase(agent().name)}
                       </text>
                       <Show when={store.mode === "normal" && local.permission.mode === "auto"}>
-                        <text fg={fadeColor(theme.textMuted, agentMetaAlpha())}>auto</text>
+                        <text fg={fadeColor(theme.textMuted, agentMetaAlpha())}>mode on</text>
                       </Show>
                       <Show when={store.mode === "normal"}>
                         <box flexDirection="row" gap={1}>
@@ -1461,7 +1461,9 @@ export function Prompt(props: PromptProps) {
                           >
                             {local.model.parsed().model}
                           </text>
-                          <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>{currentProviderLabel()}</text>
+                          <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>
+                            {currentProviderLabel().toLowerCase().includes("ollama") ? "LOCAL" : "CLOUD"}
+                          </text>
                           <Show when={showVariant()}>
                             <text fg={fadeColor(theme.textMuted, variantMetaAlpha())}>·</text>
                             <text>
