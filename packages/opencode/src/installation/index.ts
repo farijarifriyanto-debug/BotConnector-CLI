@@ -1,7 +1,7 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { httpClient } from "@opencode-ai/core/effect/app-node-platform"
-import { Effect, Layer, Schema, Context, Stream } from "effect"
+import { Effect, Layer, Schema, Context } from "effect"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
 import { withTransientReadRetry } from "@/util/effect-http-client"
@@ -136,11 +136,6 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
       return `Upgrade failed for ${method}.`
     }
 
-    const upgradeScriptShell = Effect.fnUntraced(function* () {
-      const bashVersion = yield* text(["bash", "--version"])
-      if (bashVersion) return "bash"
-      return "sh"
-    })
 
     const upgradeCurl = Effect.fnUntraced(
       function* (target: string) {
