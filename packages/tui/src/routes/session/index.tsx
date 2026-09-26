@@ -260,7 +260,7 @@ export function Session() {
   const thinkingMode = thinking.mode
   const showThinking = createMemo(() => true)
   const [timestamps, setTimestamps] = kv.signal<"hide" | "show">("timestamps", "hide")
-  const [showDetails, setShowDetails] = kv.signal("tool_details_visibility", true)
+  const [showDetails, setShowDetails] = kv.signal("tool_details_visibility", false)
   const [showAssistantMetadata, _setShowAssistantMetadata] = kv.signal("assistant_metadata_visibility", true)
   const [showScrollbar, setShowScrollbar] = kv.signal("scrollbar_visible", false)
   const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
@@ -1397,26 +1397,18 @@ function UserMessage(props: {
         <box
           id={props.message.id}
           ref={(el: BoxRenderable) => alwaysSeparate.add(el)}
-          border={["left"]}
-          borderColor={color()}
-          customBorderChars={SplitBorder.customBorderChars}
           marginTop={props.index === 0 ? 0 : 1}
+          onMouseOver={() => setHover(true)}
+          onMouseOut={() => setHover(false)}
+          onMouseUp={props.onMouseUp}
+          paddingTop={1}
+          paddingLeft={1}
+          flexShrink={0}
         >
-          <box
-            onMouseOver={() => {
-              setHover(true)
-            }}
-            onMouseOut={() => {
-              setHover(false)
-            }}
-            onMouseUp={props.onMouseUp}
-            paddingTop={1}
-            paddingBottom={1}
-            paddingLeft={2}
-            backgroundColor={hover() ? theme.backgroundElement : theme.backgroundPanel}
-            flexShrink={0}
-          >
+          <box flexDirection="row" gap={1}>
+            <text fg={hover() ? color() : theme.textMuted}>&gt;</text>
             <text fg={theme.text}>{text()}</text>
+          </box>
             <Show when={files().length}>
               <box flexDirection="row" paddingBottom={metadataVisible() ? 1 : 0} paddingTop={1} gap={1} flexWrap="wrap">
                 <For each={files()}>
@@ -1450,7 +1442,6 @@ function UserMessage(props: {
                 <span style={{ bg: color(), fg: queuedFg(), bold: true }}> QUEUED </span>
               </text>
             </Show>
-          </box>
         </box>
       </Show>
       <Show when={compaction()}>
@@ -1747,14 +1738,33 @@ function TextPart(props: { last: boolean; part: TextPart; message: AssistantMess
 
 function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMessage }) {
   const ctx = use()
+  const { theme } = useTheme()
   const display = createMemo(() => toolDisplay(props.part.tool))
 
   // Hide tool if showDetails is false and tool completed successfully
-  const shouldHide = createMemo(() => {
-    if (isInternalTranscriptTool(props.part.tool)) return true
-    if (ctx.showDetails()) return false
-    if (props.part.state.status !== "completed") return false
-    return true
+  const shouldHide = createMemo(() => isInternalTranscriptTool(props.part.tool))
+  const compactCompleted = createMemo(() => !ctx.showDetails() && props.part.state.status === "completed")
+  const compactLabel = createMemo(() => {
+    switch (display()) {
+      case "bash":
+        return "Ran shell command"
+      case "read":
+        return "Read file"
+      case "glob":
+      case "grep":
+        return "Searched files"
+      case "write":
+      case "edit":
+      case "apply_patch":
+        return "Updated file"
+      case "webfetch":
+      case "websearch":
+        return "Searched web"
+      case "task":
+        return "Ran subagent"
+      default:
+        return "Ran tool"
+    }
   })
 
   const toolprops = {
@@ -1777,6 +1787,15 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
 
   return (
     <Show when={!shouldHide()}>
+      <Show
+        when={!compactCompleted()}
+        fallback={
+          <box paddingLeft={3} marginTop={1} flexDirection="row" gap={1} flexShrink={0}>
+            <text fg={theme.textMuted}>•</text>
+            <text fg={theme.textMuted}>{compactLabel()}</text>
+          </box>
+        }
+      >
       <Switch>
         <Match when={display() === "bash"}>
           <Shell {...toolprops} />
@@ -1824,6 +1843,7 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
           <GenericTool {...toolprops} />
         </Match>
       </Switch>
+      </Show>
     </Show>
   )
 }

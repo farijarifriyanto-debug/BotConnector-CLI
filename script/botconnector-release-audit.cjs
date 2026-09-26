@@ -128,9 +128,11 @@ if (!readmeBody.includes("Cascadia Mono")) fail("recommended BotConnector termin
 if (!sessionRoute.includes('kv.signal<"auto" | "hide">("sidebar", "hide")')) fail("compact TUI must keep the sidebar collapsed by default")
 if (!sessionRoute.includes('if (sidebar() === "auto" && wide()) return true')) fail("explicit auto-sidebar mode no longer works on wide terminals")
 if (!sessionRoute.includes('const showThinking = createMemo(() => true)')) fail("thinking visibility is not restored to upstream OpenCode")
-if (!sessionRoute.includes('kv.signal("tool_details_visibility", true)')) fail("tool details are not restored to upstream OpenCode")
+if (!sessionRoute.includes('kv.signal("tool_details_visibility", false)')) fail("compact TUI must keep completed tool details collapsed by default")
 if (!sessionRoute.includes('kv.signal("assistant_metadata_visibility", true)')) fail("assistant metadata visibility default changed unexpectedly")
 if (!sessionRoute.includes('"●"') || !sessionRoute.includes('"done"')) fail("compact assistant completion footer is missing")
+if (!sessionRoute.includes('>')) fail("compact user prompt marker is missing")
+if (!sessionRoute.includes('Ran shell command')) fail("compact completed-tool activity row is missing")
 if (!sessionRoute.includes('more output · click to expand')) fail("compact shell output disclosure is missing")
 const compactTuiSources = read("TUI_DESIGN_SOURCES.md")
 for (const source of ["MoCode-TUI", "TermIDE", "Hunk"]) {
@@ -138,6 +140,9 @@ for (const source of ["MoCode-TUI", "TermIDE", "Hunk"]) {
 }
 
 const promptComponent = read("packages/tui/src/component/prompt/index.tsx")
+if (!promptComponent.includes('border={["top"]}')) fail("compact prompt separator is missing")
+if (promptComponent.includes('{location()?.directory ?? paths.cwd}')) fail("compact prompt still renders cwd by default")
+if (promptComponent.includes('>agents</span>') || promptComponent.includes('>commands</span>')) fail("compact prompt still renders permanent shortcut hints")
 if (!promptComponent.includes("Ask BCCLI…")) {
   fail("TUI prompt still uses generic upstream home copy")
 }
