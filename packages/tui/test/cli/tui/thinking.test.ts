@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { reasoningSummary } from "../../../src/context/thinking"
+import { reasoningSummary, splitEmbeddedThinking } from "../../../src/context/thinking"
 
 describe("reasoningSummary", () => {
   test("extracts a leading summary title and leaves markdown body", () => {
@@ -32,5 +32,34 @@ describe("reasoningSummary", () => {
 
   test("leaves content without a leading title in its body", () => {
     expect(reasoningSummary("Details only.")).toEqual({ title: null, body: "Details only." })
+  })
+})
+
+describe("splitEmbeddedThinking", () => {
+  test("extracts DeepSeek-style think markup into a separate disclosure", () => {
+    expect(splitEmbeddedThinking("<think>inspect files\nthen test</think>Final answer")).toEqual({
+      hasThinking: true,
+      reasoning: "inspect files\nthen test",
+      answer: "Final answer",
+      closed: true,
+    })
+  })
+
+  test("keeps an in-progress think block out of normal answer text", () => {
+    expect(splitEmbeddedThinking("<think>still reasoning")).toEqual({
+      hasThinking: true,
+      reasoning: "still reasoning",
+      answer: "",
+      closed: false,
+    })
+  })
+
+  test("leaves ordinary answers unchanged", () => {
+    expect(splitEmbeddedThinking("Normal answer")).toEqual({
+      hasThinking: false,
+      reasoning: "",
+      answer: "Normal answer",
+      closed: true,
+    })
   })
 })

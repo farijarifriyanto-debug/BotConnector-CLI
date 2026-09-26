@@ -16,6 +16,44 @@ export function reasoningSummary(text: string) {
   return { title: match[1].trim(), body: content.slice(match[0].length).trimEnd() }
 }
 
+
+export type EmbeddedThinking = {
+  hasThinking: boolean
+  reasoning: string
+  answer: string
+  closed: boolean
+}
+
+export function splitEmbeddedThinking(text: string): EmbeddedThinking {
+  const lower = text.toLowerCase()
+  const open = lower.indexOf("<think>")
+  if (open === -1) {
+    const cleaned = text.replace(/<\/?think>/gi, "").trim()
+    return { hasThinking: false, reasoning: "", answer: cleaned, closed: true }
+  }
+
+  const before = text.slice(0, open)
+  const start = open + "<think>".length
+  const close = lower.indexOf("</think>", start)
+  if (close === -1) {
+    return {
+      hasThinking: true,
+      reasoning: text.slice(start).trim(),
+      answer: before.replace(/<\/?think>/gi, "").trim(),
+      closed: false,
+    }
+  }
+
+  const reasoning = text.slice(start, close).trim()
+  const after = text.slice(close + "</think>".length)
+  const answer = [before, after]
+    .map((part) => part.replace(/<\/?think>/gi, "").trim())
+    .filter(Boolean)
+    .join("\n\n")
+
+  return { hasThinking: true, reasoning, answer, closed: true }
+}
+
 export function isThinkingMode(value: unknown): value is ThinkingMode {
   return typeof value === "string" && (MODES as readonly string[]).includes(value)
 }
