@@ -45,11 +45,11 @@ Supported BotConnector paths are:
 
 Canonical runtime variables use the `BOTCONNECTOR_*` namespace. Legacy upstream names may remain internally only as compatibility aliases; they are not the supported user-facing configuration surface.
 
-BotConnector does not override OpenCode permission defaults. The upstream permission model applies, including its normal guards for external-directory access, doom-loop detection, and sensitive `.env` reads.
+BotConnector keeps the engine's established permission defaults, including guards for external-directory access, doom-loop detection, and sensitive `.env` reads.
 
 ## TUI appearance
 
-BotConnector keeps the OpenCode interaction model and customizes only the TUI presentation: branding, labels, colors, spacing, and prompt placeholder.
+BotConnector keeps the mature terminal interaction model while presenting its own branding, labels, colors, spacing, and prompt experience.
 
 Recommended terminal font: **Cascadia Mono**. Font selection is controlled by the terminal application, so BotConnector does not modify the user's terminal profile automatically.
 
