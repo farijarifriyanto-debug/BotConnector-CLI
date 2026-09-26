@@ -1,0 +1,196 @@
+name: npm-bootstrap-bccli
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Initial BCCLI npm version"
+        required: true
+        default: "0.1.0-beta.1"
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-bootstrap-bccli-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - name: Verify initial package metadata and npm token
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          V="${{ inputs.version }}"
+          test "${GITHUB_REF}" = "refs/heads/main"
+          test "$(node -p "require('./npm-package/main/package.json').version")" = "$V"
+          test "$(node -p "require('./npm-package/platform-linux-x64/package.json').version")" = "$V"
+          test "$(node -p "require('./npm-package/platform-win32-x64/package.json').version")" = "$V"
+          test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['bccli-linux-x64']")" = "$V"
+          test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['bccli-win32-x64']")" = "$V"
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::Repository secret NPM_TOKEN is not configured."
+            exit 1
+          fi
+          npm whoami >/dev/null
+          node script/botconnector-release-audit.cjs
+
+  pack-main:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+      - name: Pack main package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          (cd npm-package/main && npm pack --pack-destination ../../out)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: npm-main
+          path: out/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  build-platform:
+    needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            package_dir: npm-package/platform-linux-x64
+            artifact_name: npm-linux-x64
+            binary_name: bccli
+          - os: windows-latest
+            package_dir: npm-package/platform-win32-x64
+            artifact_name: npm-win32-x64
+            binary_name: bccli.exe
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version-file: package.json
+      - name: Install dependencies
+        run: bun install
+      - name: Build BCCLI
+        env:
+          OPENCODE_VERSION: ${{ inputs.version }}
+        run: bun run ./packages/botconnector/script/build.ts --single --skip-embed-web-ui
+      - name: Pack platform package
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'bccli.exe' | head -1)
+          else
+            BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'bccli' -type f | head -1)
+          fi
+          test -n "$BIN"
+          cp "$BIN" "${{ matrix.package_dir }}/${{ matrix.binary_name }}"
+          chmod +x "${{ matrix.package_dir }}/${{ matrix.binary_name }}" || true
+          mkdir -p out
+          (cd "${{ matrix.package_dir }}" && npm pack --pack-destination ../../out)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: out/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-platforms:
+    needs: [build-platform, pack-main]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: npm-linux-x64
+          path: artifacts/linux
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: npm-win32-x64
+          path: artifacts/windows
+      - name: Bootstrap platform packages on npm
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          V="${{ inputs.version }}"
+          TAG="latest"
+          [[ "$V" == *-* ]] && TAG="beta"
+          npm whoami >/dev/null
+          for spec in             "bccli-linux-x64:$(find artifacts/linux -name '*.tgz' -type f | head -1)"             "bccli-win32-x64:$(find artifacts/windows -name '*.tgz' -type f | head -1)"; do
+            PKG="${spec%%:*}"
+            FILE="${spec#*:}"
+            if npm view "${PKG}@${V}" version >/dev/null 2>&1; then
+              echo "${PKG}@${V} already exists; skipping"
+            else
+              npm publish "$FILE" --access public --provenance --tag "$TAG"
+            fi
+          done
+
+  publish-main:
+    needs: publish-platforms
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: npm-main
+          path: artifacts/main
+      - name: Bootstrap BCCLI package and verify registry
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          V="${{ inputs.version }}"
+          TAG="latest"
+          [[ "$V" == *-* ]] && TAG="beta"
+          npm whoami >/dev/null
+          if npm view "bccli@${V}" version >/dev/null 2>&1; then
+            echo "bccli@${V} already exists; skipping"
+          else
+            npm publish "$(find artifacts/main -name '*.tgz' -type f | head -1)" --access public --provenance --tag "$TAG"
+          fi
+          for i in {1..36}; do
+            MAIN=$(npm view "bccli@${V}" version 2>/dev/null || true)
+            LINUX=$(npm view "bccli-linux-x64@${V}" version 2>/dev/null || true)
+            WIN=$(npm view "bccli-win32-x64@${V}" version 2>/dev/null || true)
+            if [ "$MAIN" = "$V" ] && [ "$LINUX" = "$V" ] && [ "$WIN" = "$V" ]; then
+              echo "Published bccli@${V} and both platform packages."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Registry verification did not converge." >&2
+          exit 1
