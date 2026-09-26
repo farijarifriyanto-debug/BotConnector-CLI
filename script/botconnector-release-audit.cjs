@@ -25,11 +25,22 @@ if (Object.keys(gateway?.models ?? {}).length !== 0) fail("bundled BotConnector 
 if (!launcher.includes("provider.models = {}")) fail("launcher does not purge persisted Gateway model snapshots")
 
 const liveProviderSource = read("packages/botconnector/src/provider/provider.ts")
-if (!liveProviderSource.includes('botconnectorBaseURL.replace(/\\/+$/, "") + "/models"')) {
+if (!liveProviderSource.includes('baseURL.replace(/\\/+$/, "") + "/models"')) {
   fail("BotConnector Gateway does not discover the live /v1/models catalog")
 }
-if (!liveProviderSource.includes("botconnector.models = {}")) fail("live catalog path does not clear stale model snapshots")
-if (!liveProviderSource.includes("botconnector.models = discovered")) fail("live catalog result is not installed")
+if (!liveProviderSource.includes("if (botconnector) botconnector.models = {}")) {
+  fail("live catalog path does not clear stale model snapshots")
+}
+if (!liveProviderSource.includes('Effect.fn("Provider.discover")')) {
+  fail("BotConnector live catalog discovery is not demand-driven")
+}
+if (!liveProviderSource.includes("s.discoveredProviders.add(providerID)")) {
+  fail("BotConnector live catalog discovery is not cached per process")
+}
+const modelsCommandSource = read("packages/botconnector/src/cli/cmd/models.ts")
+if (!modelsCommandSource.includes('args.provider === "botconnector"')) {
+  fail("BotConnector models command does not explicitly discover the live Cloud catalog")
+}
 
 const ollama = cfg.provider?.ollama
 if (ollama?.name !== "Ollama Local") fail("Ollama Local provider missing")

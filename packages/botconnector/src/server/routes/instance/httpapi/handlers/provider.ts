@@ -48,6 +48,7 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       for (const [key, value] of Object.entries(all)) {
         if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) filtered[key] = value
       }
+      yield* provider.discover(ProviderV2.ID.make("botconnector"))
       const connected = yield* provider.list()
       const credentials = yield* authStore.all().pipe(Effect.orDie)
       const providers = Object.assign(
