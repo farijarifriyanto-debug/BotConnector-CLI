@@ -1599,7 +1599,7 @@ const layer = Layer.effect(
           if (apiKey) {
             yield* Effect.promise(async () => {
               try {
-                const modelsURL = new URL(botconnectorBaseURL.replace(/\\/+$/, "") + "/models")
+                const modelsURL = new URL(botconnectorBaseURL.replace(/\/+$/, "") + "/models")
                 const response = await fetch(modelsURL, {
                   headers: {
                     accept: "application/json",
