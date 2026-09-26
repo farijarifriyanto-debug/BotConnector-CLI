@@ -272,6 +272,11 @@ if (!shareSource.includes("Legacy upstream sharing endpoints are disabled in Bot
 const botconnectorThemeSource = read("packages/tui/src/theme/assets/botconnector.json")
 if (botconnectorThemeSource.includes("opencode.ai/theme.json")) fail("BotConnector theme still references upstream schema")
 
+const themeIndex = read("packages/tui/src/theme/index.ts")
+if (themeIndex.includes('import opencode from "./assets/opencode.json"') || themeIndex.includes("\n  opencode,\n")) {
+  fail("TUI theme selector still exposes the upstream product theme")
+}
+
 const serverUi = read("packages/opencode/src/server/shared/ui.ts")
 if (serverUi.includes("app.opencode.ai") || serverUi.includes("UI_UPSTREAM") || serverUi.includes("upstreamURL(")) {
   fail("server UI can still proxy to an upstream product")
