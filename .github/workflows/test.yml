@@ -57,7 +57,7 @@ jobs:
 
       - name: Smoke-run built binary
         run: |
-          BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'botconnector' -type f | head -1)
+          BIN=$(find packages/botconnector/dist -maxdepth 3 -iname 'bccli' -type f | head -1)
           test -n "$BIN"
           chmod +x "$BIN"
           "$BIN" --version

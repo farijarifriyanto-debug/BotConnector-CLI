@@ -216,13 +216,15 @@ jobs:
           set -euo pipefail
           unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
           V="${{ inputs.version }}"
+          TAG="latest"
+          [[ "$V" == *-* ]] && TAG="beta"
           publish_if_missing() {
             local pkg="$1"
             local file="$2"
             if npm view "${pkg}@${V}" version >/dev/null 2>&1; then
               echo "${pkg}@${V} already exists; skipping"
             else
-              npm publish "$file" --access public --provenance
+              npm publish "$file" --access public --provenance --tag "$TAG"
             fi
           }
           publish_if_missing "bccli-linux-x64" "$(find artifacts/linux -name '*.tgz' -type f | head -1)"
@@ -251,10 +253,12 @@ jobs:
           set -euo pipefail
           unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
           V="${{ inputs.version }}"
+          TAG="latest"
+          [[ "$V" == *-* ]] && TAG="beta"
           if npm view "bccli@${V}" version >/dev/null 2>&1; then
             echo "bccli@${V} already exists; skipping"
           else
-            npm publish "$(find artifacts/main -name '*.tgz' -type f | head -1)" --access public --provenance
+            npm publish "$(find artifacts/main -name '*.tgz' -type f | head -1)" --access public --provenance --tag "$TAG"
           fi
       - name: Verify registry release
         shell: bash
