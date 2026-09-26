@@ -1,6 +1,6 @@
 {
   "name": "botconnector-cli-win32-x64",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "BotConnector CLI prebuilt binary for Windows x64. Not meant to be installed directly -- see the botconnector-cli package.",
   "license": "MIT",
   "repository": {

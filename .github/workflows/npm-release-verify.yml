@@ -6,7 +6,7 @@ on:
       version:
         description: "npm version to verify"
         required: true
-        default: "0.1.12"
+        default: "0.1.13"
         type: string
 
 jobs:
@@ -180,7 +180,9 @@ jobs:
                     baseURL: "https://api.botconnector.id/v1",
                     apiKey: "{env:BOTCONNECTOR_API_KEY}"
                   },
-                  models: {}
+                  models: {
+                    "legacy-snapshot-model": { "name": "Legacy Snapshot Model" }
+                  }
                 }
               },
               permission: {
@@ -202,6 +204,7 @@ jobs:
           if (gateway.name !== "BotConnector Gateway") throw new Error("legacy gateway name was not migrated")
           if (gateway.options.apiKey !== undefined) throw new Error("legacy apiKey placeholder was not removed")
           if (!gateway.env?.includes("BOTCONNECTOR_API_KEY")) throw new Error("gateway env fallback was not migrated")
+          if (Object.keys(gateway.models ?? {}).length !== 0) throw new Error("legacy Gateway model snapshot was not removed")
           if (cfg.permission !== undefined) throw new Error("legacy BotConnector permission override was not removed")
           if (cfg.provider?.ollama?.options?.baseURL !== "http://127.0.0.1:11434/v1") {
             throw new Error("Ollama Local provider was not migrated")
@@ -221,3 +224,4 @@ jobs:
           fi
 
           node ../script/botconnector-local-privacy-smoke.cjs
+          node ../script/botconnector-cloud-catalog-smoke.cjs

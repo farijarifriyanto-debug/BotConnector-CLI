@@ -21,6 +21,15 @@ const gateway = cfg.provider?.botconnector
 if (gateway?.name !== "BotConnector Gateway") fail("BotConnector Gateway provider missing")
 if (gateway?.options?.baseURL !== "https://api.botconnector.id/v1") fail("BotConnector Gateway URL mismatch")
 if (!gateway?.env?.includes("BOTCONNECTOR_API_KEY")) fail("BOTCONNECTOR_API_KEY binding missing")
+if (Object.keys(gateway?.models ?? {}).length !== 0) fail("bundled BotConnector Gateway catalog must stay empty")
+if (!launcher.includes("provider.models = {}")) fail("launcher does not purge persisted Gateway model snapshots")
+
+const liveProviderSource = read("packages/opencode/src/provider/provider.ts")
+if (!liveProviderSource.includes('botconnectorBaseURL.replace(/\\/+$/, "") + "/models"')) {
+  fail("BotConnector Gateway does not discover the live /v1/models catalog")
+}
+if (!liveProviderSource.includes("botconnector.models = {}")) fail("live catalog path does not clear stale model snapshots")
+if (!liveProviderSource.includes("botconnector.models = discovered")) fail("live catalog result is not installed")
 
 const ollama = cfg.provider?.ollama
 if (ollama?.name !== "Ollama Local") fail("Ollama Local provider missing")
