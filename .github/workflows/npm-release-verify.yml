@@ -7,7 +7,7 @@ on:
       version:
         description: "npm version to verify"
         required: true
-        default: "0.1.0-beta.4"
+        default: "0.1.14-rc.1"
         type: string
 
 concurrency:
