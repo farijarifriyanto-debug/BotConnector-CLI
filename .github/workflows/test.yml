@@ -42,6 +42,9 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
+      - name: Enforce source, SDK and npm release contracts
+        run: node script/botconnector-release-audit.cjs
+
       - name: Typecheck BotConnector CLI
         working-directory: packages/botconnector
         run: bun run typecheck
@@ -63,7 +66,6 @@ jobs:
           "$BIN" --version
 
   unit:
-    if: github.event_name != 'pull_request'
     needs: quick
     name: unit (${{ matrix.settings.name }})
     strategy:
@@ -130,7 +132,6 @@ jobs:
         run: bun run test:httpapi
 
   e2e:
-    if: github.event_name != 'pull_request'
     needs: quick
     name: e2e (${{ matrix.settings.name }})
     strategy:
