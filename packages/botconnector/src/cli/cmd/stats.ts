@@ -11,6 +11,8 @@ interface SessionStats {
   totalSessions: number
   totalMessages: number
   totalCost: number
+  /** Gateway pricing is authoritative upstream; these messages cannot be priced from CLI metadata. */
+  unpricedGatewayMessages: number
   totalTokens: {
     input: number
     output: number
@@ -125,6 +127,7 @@ const aggregateSessionStats = Effect.fn("Cli.stats.aggregate")(function* (
     totalSessions: filteredSessions.length,
     totalMessages: 0,
     totalCost: 0,
+    unpricedGatewayMessages: 0,
     totalTokens: {
       input: 0,
       output: 0,
@@ -211,6 +214,9 @@ const aggregateSessionStats = Effect.fn("Cli.stats.aggregate")(function* (
 
         return {
           messageCount: messages.length,
+          unpricedGatewayMessages: messages.filter(
+            (item) => item.info.role === "assistant" && item.info.providerID === "botconnector",
+          ).length,
           sessionCost,
           sessionTokens,
           sessionTotalTokens:
@@ -234,6 +240,7 @@ const aggregateSessionStats = Effect.fn("Cli.stats.aggregate")(function* (
     sessionTotalTokens.push(result.sessionTotalTokens)
 
     stats.totalMessages += result.messageCount
+    stats.unpricedGatewayMessages += result.unpricedGatewayMessages
     stats.totalCost += result.sessionCost
     stats.totalTokens.input += result.sessionTokens.input
     stats.totalTokens.output += result.sessionTokens.output
@@ -316,8 +323,12 @@ export function displayStats(stats: SessionStats, toolLimit?: number, modelLimit
   const cost = isNaN(stats.totalCost) ? 0 : stats.totalCost
   const costPerDay = isNaN(stats.costPerDay) ? 0 : stats.costPerDay
   const tokensPerSession = isNaN(stats.tokensPerSession) ? 0 : stats.tokensPerSession
-  console.log(renderRow("Total Cost", `$${cost.toFixed(2)}`))
-  console.log(renderRow("Avg Cost/Day", `$${costPerDay.toFixed(2)}`))
+  console.log(renderRow(stats.unpricedGatewayMessages > 0 ? "Known Cost (excl. Gateway)" : "Total Cost", `$${cost.toFixed(2)}`))
+  console.log(renderRow(stats.unpricedGatewayMessages > 0 ? "Known Avg Cost/Day" : "Avg Cost/Day", `$${costPerDay.toFixed(2)}`))
+  if (stats.unpricedGatewayMessages > 0) {
+    console.log(renderRow("Gateway-billed messages", formatNumber(stats.unpricedGatewayMessages)))
+    console.log(renderRow("Gateway + title charges", "Not included; see Workspace"))
+  }
   console.log(renderRow("Avg Tokens/Session", formatNumber(Math.round(tokensPerSession))))
   const medianTokensPerSession = isNaN(stats.medianTokensPerSession) ? 0 : stats.medianTokensPerSession
   console.log(renderRow("Median Tokens/Session", formatNumber(Math.round(medianTokensPerSession))))
@@ -325,6 +336,9 @@ export function displayStats(stats: SessionStats, toolLimit?: number, modelLimit
   console.log(renderRow("Output", formatNumber(stats.totalTokens.output)))
   console.log(renderRow("Cache Read", formatNumber(stats.totalTokens.cache.read)))
   console.log(renderRow("Cache Write", formatNumber(stats.totalTokens.cache.write)))
+  const cached = stats.totalTokens.cache.read
+  const grossInput = stats.totalTokens.input + cached + stats.totalTokens.cache.write
+  console.log(renderRow("Cache Read Ratio", grossInput ? (100 * cached / grossInput).toFixed(1) + "%" : "N/A"))
   console.log("└────────────────────────────────────────────────────────┘")
   console.log()
 
@@ -344,7 +358,7 @@ export function displayStats(stats: SessionStats, toolLimit?: number, modelLimit
       console.log(renderRow("  Output Tokens", formatNumber(usage.tokens.output)))
       console.log(renderRow("  Cache Read", formatNumber(usage.tokens.cache.read)))
       console.log(renderRow("  Cache Write", formatNumber(usage.tokens.cache.write)))
-      console.log(renderRow("  Cost", `$${usage.cost.toFixed(4)}`))
+      console.log(renderRow("  Cost", model.startsWith("botconnector/") ? "Gateway billed" : `$${usage.cost.toFixed(4)}`))
       console.log("├────────────────────────────────────────────────────────┤")
     }
     // Remove last separator and add bottom border
