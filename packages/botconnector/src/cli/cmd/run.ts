@@ -697,6 +697,7 @@ export const RunCommand = effectCmd({
           const toggles = new Map<string, boolean>()
           const sessions = new Set([sessionID])
           let error: string | undefined
+          let permissionRejected = false
 
           for await (const event of events.stream) {
             if (event.type === "session.created" && event.properties.info.parentID) {
@@ -807,11 +808,14 @@ export const RunCommand = effectCmd({
                   reply: "once",
                 })
               } else {
-                UI.println(
-                  UI.Style.TEXT_WARNING_BOLD + "!",
-                  UI.Style.TEXT_NORMAL +
-                    `permission requested: ${permission.permission} (${permission.patterns.join(", ")}); auto-rejecting`,
-                )
+                permissionRejected = true
+                if (!emit("permission_denied", { permission: permission.permission })) {
+                  UI.println(
+                    UI.Style.TEXT_WARNING_BOLD + "!",
+                    UI.Style.TEXT_NORMAL +
+                      `permission requested: ${permission.permission} (${permission.patterns.join(", ")}); auto-rejecting`,
+                  )
+                }
                 await client.permission.reply({
                   requestID: permission.id,
                   reply: "reject",
@@ -819,7 +823,8 @@ export const RunCommand = effectCmd({
               }
             }
           }
-          return error
+          // Automation must not report success when the requested tool action was rejected.
+          return error ?? (permissionRejected ? "Tool permission denied: task requires user authorization" : undefined)
         }
         const cwd = args.attach ? (directory ?? sess.directory ?? (await current(sdk))) : (directory ?? root)
         const client = args.attach ? attachSDK(cwd) : sdk
