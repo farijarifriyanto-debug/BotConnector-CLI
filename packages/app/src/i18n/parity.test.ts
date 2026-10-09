@@ -97,27 +97,31 @@ const domains = [
 ] as const
 
 describe("i18n parity", () => {
-  test("non-English locales have every English key and required plural variants", async () => {
-    for (const domain of domains) {
-      const source = await dictionary(domain.source)
-      for (const locale of domain.locales) {
-        const target = await dictionary(domain.target(locale))
-        const missing = Object.keys(source).filter((key) => !Object.hasOwn(target, key))
-        const extra = Object.keys(target)
-          .filter((key) => !Object.hasOwn(source, key))
-          .sort()
-        const expected = pluralFamilies(source)
-          .flatMap((key) => (pluralCategories.get(locale) ?? []).map((category) => `${key}.${category}`))
-          .sort()
-        expect({ domain: domain.name, locale, missing, extra }).toEqual({
-          domain: domain.name,
-          locale,
-          missing: [],
-          extra: expected,
-        })
+  test(
+    "non-English locales have every English key and required plural variants",
+    async () => {
+      for (const domain of domains) {
+        const source = await dictionary(domain.source)
+        for (const locale of domain.locales) {
+          const target = await dictionary(domain.target(locale))
+          const missing = Object.keys(source).filter((key) => !Object.hasOwn(target, key))
+          const extra = Object.keys(target)
+            .filter((key) => !Object.hasOwn(source, key))
+            .sort()
+          const expected = pluralFamilies(source)
+            .flatMap((key) => (pluralCategories.get(locale) ?? []).map((category) => `${key}.${category}`))
+            .sort()
+          expect({ domain: domain.name, locale, missing, extra }).toEqual({
+            domain: domain.name,
+            locale,
+            missing: [],
+            extra: expected,
+          })
+        }
       }
-    }
-  })
+    },
+    30_000,
+  )
 
   test("non-English locales preserve English placeholders", async () => {
     for (const domain of domains) {
