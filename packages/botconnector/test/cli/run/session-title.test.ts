@@ -22,7 +22,7 @@ describe("token-efficient session title", () => {
     expect(resolveSessionTitle({ message: "Fix checkout", mode: "ai", interactive: false, explicit: "My task" }))
       .toBe("My task")
     expect(resolveSessionTitle({ message: "Fix checkout", mode: "ai", interactive: false, explicit: "" }))
-      .toBeUndefined()
+      .toBe("Fix checkout")
   })
 
   test("prompt mode works even in interactive mode", () => {
