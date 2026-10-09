@@ -10,6 +10,11 @@ on:
         default: "0.1.0-beta.4"
         type: string
 
+concurrency:
+  group: npm-release-verify-${{ github.event.pull_request.number || github.ref }}
+  # A superseded PR package is not releasable. Do not cancel checks on main.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   verify-metadata:
     runs-on: ubuntu-latest
