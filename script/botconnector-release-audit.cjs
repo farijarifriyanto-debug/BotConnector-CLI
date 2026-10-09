@@ -6,7 +6,16 @@ const fail = (message) => {
   process.exitCode = 1
 }
 
+const sdkBuild = read("packages/sdk/js/script/build.ts")
+if (sdkBuild.includes("../../opencode")) fail("SDK build still targets the removed packages/opencode")
+if (!sdkBuild.includes('path.resolve(dir, "../../botconnector")')) {
+  fail("SDK build is not rooted at the canonical BotConnector package")
+}
+
 const launcher = read("npm-package/main/bin/bccli.js")
+if (launcher.includes("Try: npm install bccli --include=optional")) {
+  fail("npm launcher still recommends the wrong recovery package")
+}
 for (const needle of [
   "env.BOTCONNECTOR_CONFIG = seededConfig",
   "delete env.OPENCODE_CONFIG",
