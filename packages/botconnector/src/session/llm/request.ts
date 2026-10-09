@@ -12,6 +12,7 @@ import { SystemPrompt } from "../system"
 import { InstallationVersion } from "@botconnector/core/installation/version"
 import { Effect, Record } from "effect"
 import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
+import { omitToolsForGreeting } from "./tool-routing"
 import type { Plugin } from "@/plugin"
 import { mergeDeep } from "remeda"
 
@@ -205,7 +206,12 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
   }
 })
 
-function resolveTools(input: Pick<PrepareInput, "tools" | "agent" | "permission" | "user">) {
+function resolveTools(input: Pick<PrepareInput, "tools" | "agent" | "permission" | "user" | "messages">) {
+  // Keep every tool for coding, follow-ups, attachments and any ambiguous request.
+  // Only literal one-turn greetings bypass the large schema payload.
+  if (omitToolsForGreeting(input.messages, Object.values(input.user.tools ?? {}).some((value) => value === true))) {
+    return {} as Record<string, Tool>
+  }
   const disabled = Permission.disabled(
     Object.keys(input.tools),
     Permission.merge(input.agent.permission, input.permission ?? []),
