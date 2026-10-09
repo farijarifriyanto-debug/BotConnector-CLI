@@ -9,6 +9,7 @@ import { Location } from "@botconnector/core/location"
 import { AbsolutePath, RelativePath } from "@botconnector/core/schema"
 import { Snapshot } from "@botconnector/core/snapshot"
 import { Hash } from "@botconnector/core/util/hash"
+import { FSUtil } from "@botconnector/core/fs-util"
 import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
@@ -118,11 +119,13 @@ describe("Snapshot", () => {
               AppNodeBuilder.build(Location.boundNode(Location.Ref.make({ directory: AbsolutePath.make(project) }))),
             ),
           )
+          const projectWorktree = FSUtil.normalizePath(project)
+          const linkedWorktree = FSUtil.normalizePath(linked)
           expect(
-            yield* Effect.promise(() => fs.stat(path.join(tmp.path, "snapshot", projectID, Hash.fast(project)))),
+            yield* Effect.promise(() => fs.stat(path.join(tmp.path, "snapshot", projectID, Hash.fast(projectWorktree)))),
           ).toBeDefined()
           expect(
-            yield* Effect.promise(() => fs.stat(path.join(tmp.path, "snapshot", projectID, Hash.fast(linked)))),
+            yield* Effect.promise(() => fs.stat(path.join(tmp.path, "snapshot", projectID, Hash.fast(linkedWorktree)))),
           ).toBeDefined()
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),

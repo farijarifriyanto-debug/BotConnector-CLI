@@ -229,9 +229,9 @@ export namespace FSUtil {
     if (process.platform !== "win32") return p
     const resolved = pathResolve(windowsPath(p))
     try {
-      return realpathSync.native(resolved)
+      return windowsPath(realpathSync.native(resolved))
     } catch {
-      return resolved
+      return windowsPath(resolved)
     }
   }
 
@@ -256,7 +256,11 @@ export namespace FSUtil {
 
   export function windowsPath(p: string): string {
     if (process.platform !== "win32") return p
-    return p
+    const stripped = p
+      .replace(/^\\\\\?\\UNC\\/i, "\\\\")
+      .replace(/^(\\\\[?]\\|\/\/\?\/)/, "")
+    return stripped
+      .replace(/^([a-zA-Z]):([\\/]|$)/, (_, drive, rest) => `${drive.toUpperCase()}:${rest}`)
       .replace(/^\/([a-zA-Z]):(?:[\\/]|$)/, (_, drive) => `${drive.toUpperCase()}:/`)
       .replace(/^\/([a-zA-Z])(?:\/|$)/, (_, drive) => `${drive.toUpperCase()}:/`)
       .replace(/^\/cygdrive\/([a-zA-Z])(?:\/|$)/, (_, drive) => `${drive.toUpperCase()}:/`)

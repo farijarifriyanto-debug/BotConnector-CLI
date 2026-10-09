@@ -162,3 +162,73 @@ describe("Git trees", () => {
     }),
   )
 })
+
+describe("Git change and linked worktree regression", () => {
+  it.live("discovers repository with correct commonDirectory from nested directory in linked worktree", () =>
+    Effect.gen(function* () {
+      const root = yield* Effect.acquireRelease(
+        Effect.promise(() => tmpdir()),
+        (dir) => Effect.promise(() => dir[Symbol.asyncDispose]()),
+      )
+      yield* Effect.promise(() => initRepo(root.path))
+      const directory = AbsolutePath.make(yield* Effect.promise(() => fs.realpath(root.path)))
+      const worktree = AbsolutePath.make(`${root.path}-linked-wt`)
+      yield* Effect.addFinalizer(() =>
+        Effect.promise(() => fs.rm(worktree, { recursive: true, force: true })).pipe(Effect.ignore),
+      )
+      const git = yield* Git.Service
+      const repo = yield* git.repo.discover(directory)
+      if (!repo) throw new Error("Repository not found")
+
+      yield* git.worktree.create({ repository: repo, directory: worktree })
+      const nestedInLinked = path.join(worktree, "deep", "nested")
+      yield* Effect.promise(() => fs.mkdir(nestedInLinked, { recursive: true }))
+
+      const discovered = yield* git.repo.discover(AbsolutePath.make(nestedInLinked))
+      expect(discovered).toBeDefined()
+      expect(discovered?.worktree).toBe(AbsolutePath.make(yield* Effect.promise(() => fs.realpath(worktree))))
+      expect(discovered?.commonDirectory).toBe(repo.commonDirectory)
+    }),
+  )
+
+  it.live("applies changes when path is a nested directory within the worktree", () =>
+    Effect.gen(function* () {
+      const root = yield* Effect.acquireRelease(
+        Effect.promise(() => tmpdir()),
+        (dir) => Effect.promise(() => dir[Symbol.asyncDispose]()),
+      )
+      yield* Effect.promise(async () => {
+        await initRepo(root.path)
+        await fs.mkdir(path.join(root.path, "nested"), { recursive: true })
+        await fs.writeFile(path.join(root.path, "nested", "file.txt"), "before\n")
+        await $`git add .`.cwd(root.path).quiet()
+        await $`git commit -m nested`.cwd(root.path).quiet()
+      })
+      const git = yield* Git.Service
+      const repo = yield* git.repo.discover(AbsolutePath.make(root.path))
+      if (!repo) throw new Error("Repository not found")
+
+      yield* Effect.promise(() => fs.writeFile(path.join(root.path, "nested", "file.txt"), "after\n"))
+      const patch = yield* git.change.capture({
+        repository: repo,
+        path: AbsolutePath.make(path.join(root.path, "nested")),
+      })
+      expect(patch).toContain("nested/file.txt")
+
+      yield* git.change.discard({
+        repository: repo,
+        path: AbsolutePath.make(path.join(root.path, "nested")),
+        index: "preserve",
+        untracked: "remove",
+      })
+      expect(yield* read(path.join(root.path, "nested", "file.txt"))).toBe("before\n")
+
+      yield* git.change.apply({
+        repository: repo,
+        path: AbsolutePath.make(path.join(root.path, "nested")),
+        changes: patch,
+      })
+      expect(yield* read(path.join(root.path, "nested", "file.txt"))).toBe("after\n")
+    }),
+  )
+})

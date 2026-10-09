@@ -11,6 +11,7 @@ import { SessionEvent } from "../session/event"
 import { SessionSchema } from "../session/schema"
 import { SessionStore } from "../session/store"
 import { AbsolutePath, RelativePath } from "../schema"
+import { FSUtil } from "../fs-util"
 import path from "path"
 
 export const Destination = Schema.Struct({
@@ -77,8 +78,8 @@ const layer = Layer.effect(
     const moveSession = Effect.fn("MoveSession.moveSession")(function* (input: Input) {
       const current = yield* sessions.get(input.sessionID)
       if (!current) return yield* new SessionV2.NotFoundError({ sessionID: input.sessionID })
-      const directory = AbsolutePath.make(input.destination.directory)
-      if (current.location.directory === directory) return
+      const directory = AbsolutePath.make(FSUtil.normalizePath(input.destination.directory))
+      if (FSUtil.normalizePath(current.location.directory) === directory) return
 
       const source = yield* project.resolve(current.location.directory)
       const destination = yield* project.resolve(directory)
@@ -86,7 +87,8 @@ const layer = Layer.effect(
         return yield* new DestinationProjectMismatchError({ expected: current.projectID, actual: destination.id })
       }
 
-      const moveChanges = input.moveChanges && source.directory !== destination.directory
+      const moveChanges =
+        input.moveChanges && FSUtil.normalizePath(source.directory) !== FSUtil.normalizePath(destination.directory)
       const sourceRepository = moveChanges ? yield* git.repo.discover(current.location.directory) : undefined
       if (moveChanges && !sourceRepository)
         return yield* new CaptureChangesError({ message: "Source is not a Git repository" })
@@ -106,7 +108,9 @@ const layer = Layer.effect(
       yield* events.publish(SessionEvent.Moved, {
         sessionID: input.sessionID,
         location: Location.Ref.make({ directory }),
-        subdirectory: RelativePath.make(path.relative(destination.directory, directory).replaceAll("\\", "/")),
+        subdirectory: RelativePath.make(
+          path.relative(FSUtil.normalizePath(destination.directory), directory).replaceAll("\\", "/"),
+        ),
         timestamp: yield* DateTime.now,
       })
 
