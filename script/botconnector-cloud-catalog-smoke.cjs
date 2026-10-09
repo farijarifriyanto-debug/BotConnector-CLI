@@ -30,7 +30,9 @@ const server = http.createServer((req, res) => {
     object: "list",
     data: [
       { id: "live-model-a" },
-      { id: "live-model-b", name: "Live Model B", context_length: 65536, max_output_tokens: 4096 }
+      { id: "live-model-b", name: "Live Model B", context_length: 65536, max_output_tokens: 4096,
+        capabilities: { reasoning: true, toolcall: false, input: { image: true, pdf: true } },
+        input_modalities: ["text", "image", "pdf"] }
     ]
   }))
 })
@@ -53,7 +55,7 @@ server.listen(0, "127.0.0.1", async () => {
     }, null, 2) + "\n")
 
     const launcher = path.resolve("node_modules/@botconnector/bccli/bin/bccli.js")
-    const child = spawn(process.execPath, [launcher, "models", "botconnector"], {
+    const child = spawn(process.execPath, [launcher, "models", "botconnector", "--verbose"], {
       cwd: process.cwd(),
       env: {
         ...process.env,
@@ -78,6 +80,28 @@ server.listen(0, "127.0.0.1", async () => {
     if (!stdout.includes("botconnector/live-model-a")) fail("live-model-a missing from CLI model list")
     if (!stdout.includes("botconnector/live-model-b")) fail("live-model-b missing from CLI model list")
     if (stdout.includes("stale-config-model")) fail("stale config model leaked into CLI model list")
+    if (!stdout.includes('"reasoning": true')) fail("reasoning capability was discarded")
+    if (!stdout.includes('"toolcall": false')) fail("explicit tool-call limitation was discarded")
+    if (!stdout.includes('"image": true') || !stdout.includes('"pdf": true')) {
+      fail("Gateway vision or PDF capability was incorrectly disabled")
+    }
+    const rejected = spawn(process.execPath, [launcher, "models", "botconnector"], {
+      cwd: process.cwd(),
+      env: { ...process.env, BOTCONNECTOR_CONFIG: configPath, BOTCONNECTOR_API_KEY: "invalid-catalog-key" },
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+    let rejectedOut = ""
+    rejected.stdout.on("data", (data) => (rejectedOut += data))
+    rejected.stderr.on("data", (data) => (rejectedOut += data))
+    const rejectedExit = await new Promise((resolve, reject) => {
+      rejected.once("error", reject)
+      rejected.once("close", resolve)
+    })
+    if (rejectedExit === 0) fail("401 catalog failure returned success exit code")
+    if (!rejectedOut.includes("BotConnector Cloud catalog is unavailable or empty")) {
+      fail("401 catalog failure did not give an actionable, sanitized diagnostic")
+    }
+    if (rejectedOut.includes("invalid-catalog-key")) fail("API key leaked to CLI diagnostics")
     if (!process.exitCode) console.log("BOTCONNECTOR_CLOUD_CATALOG_SMOKE_PASS")
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error))
