@@ -1012,6 +1012,8 @@ export async function runMini(input: MiniCommandInput) {
     format: "default",
     file: undefined,
     title: undefined,
+    "title-mode": "auto",
+    titleMode: "auto",
     attach: input.attach,
     password: input.password,
     username: input.username,
