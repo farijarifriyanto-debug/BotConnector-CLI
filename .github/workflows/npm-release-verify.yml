@@ -1,6 +1,7 @@
 name: npm-release-verify
 
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       version:
@@ -12,16 +13,22 @@ on:
 jobs:
   verify-metadata:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.package-version.outputs.value }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "24"
+      - name: Resolve committed package version
+        id: package-version
+        shell: bash
+        run: echo "value=$(node -p \"require('./npm-package/main/package.json').version\")" >> "$GITHUB_OUTPUT"
       - name: Verify npm package versions
         shell: bash
         run: |
           set -euo pipefail
-          V="${{ inputs.version }}"
+          V="${{ inputs.version || steps.package-version.outputs.value }}"
           test "$(node -p "require('./npm-package/main/package.json').version")" = "$V"
           test "$(node -p "require('./npm-package/platform-linux-x64/package.json').version")" = "$V"
           test "$(node -p "require('./npm-package/platform-win32-x64/package.json').version")" = "$V"
@@ -93,7 +100,7 @@ jobs:
         run: bun install
       - name: Build CLI for npm platform package
         env:
-          OPENCODE_VERSION: ${{ inputs.version }}
+          OPENCODE_VERSION: ${{ needs.verify-metadata.outputs.version }}
         run: bun run ./packages/botconnector/script/build.ts --single --skip-embed-web-ui
       - name: Stage and pack platform package
         run: |
@@ -115,7 +122,7 @@ jobs:
           if-no-files-found: error
 
   install-smoke:
-    needs: [pack-main, pack-platform]
+    needs: [verify-metadata, pack-main, pack-platform]
     strategy:
       fail-fast: false
       matrix:
@@ -193,7 +200,7 @@ jobs:
           )
           NODE
 
-          test "$(npx --no-install bccli --version)" = "${{ inputs.version }}"
+          test "$(npx --no-install bccli --version)" = "${{ needs.verify-metadata.outputs.version }}"
 
           node - <<'NODE'
           const fs = require("fs")
