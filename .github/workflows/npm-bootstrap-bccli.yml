@@ -43,7 +43,6 @@ jobs:
             echo "::error::Repository secret NPM_TOKEN is not configured."
             exit 1
           fi
-          npm whoami >/dev/null
           node script/botconnector-release-audit.cjs
 
   pack-main:
@@ -144,7 +143,6 @@ jobs:
           V="${{ inputs.version }}"
           TAG="latest"
           [[ "$V" == *-* ]] && TAG="beta"
-          npm whoami >/dev/null
           for spec in             "bccli-linux-x64:$(find artifacts/linux -name '*.tgz' -type f | head -1)"             "bccli-win32-x64:$(find artifacts/windows -name '*.tgz' -type f | head -1)"; do
             PKG="${spec%%:*}"
             FILE="${spec#*:}"
@@ -176,7 +174,6 @@ jobs:
           V="${{ inputs.version }}"
           TAG="latest"
           [[ "$V" == *-* ]] && TAG="beta"
-          npm whoami >/dev/null
           if npm view "@botconnector/bccli@${V}" version >/dev/null 2>&1; then
             echo "@botconnector/bccli@${V} already exists; skipping"
           else

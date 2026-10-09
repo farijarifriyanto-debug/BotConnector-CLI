@@ -215,6 +215,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "24"
+          registry-url: "https://registry.npmjs.org"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: npm-linux-x64
@@ -229,9 +230,10 @@ jobs:
           github-token: ${{ github.token }}
       - name: Publish platform packages with npm trusted publishing
         shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
           V="${{ inputs.version }}"
           TAG="latest"
           if [[ "$V" == *-rc.* ]]; then
@@ -262,6 +264,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "24"
+          registry-url: "https://registry.npmjs.org"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: npm-main
@@ -270,9 +273,10 @@ jobs:
           github-token: ${{ github.token }}
       - name: Publish @botconnector/bccli with npm trusted publishing
         shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          unset NODE_AUTH_TOKEN NPM_TOKEN NPM_CONFIG_USERCONFIG
           V="${{ inputs.version }}"
           TAG="latest"
           if [[ "$V" == *-rc.* ]]; then
