@@ -80,3 +80,33 @@ model cost metadata, is authoritative for charges.
 For local privacy tests, use `bccli models ollama`, and verify in a controlled
 network trace that local requests never contact the Cloud Gateway. Tests that
 only serve mock Ollama data are not a substitute for real local inference.
+
+## Token-efficient operation (without disabling tools)
+
+A new **one-shot** `bccli run` session generates its searchable title locally.
+This avoids an additional inference request used exclusively to name the
+conversation. All tools, MCP integrations, model options, safety permissions,
+vision, streaming and session continuation remain available.
+
+```bash
+bccli run -m botconnector/<model> "Fix the failing tests"
+# Restore the original AI-generated title, whenever desired:
+bccli run --title-mode ai -m botconnector/<model> "Fix the failing tests"
+# Force a local title even in an interactive session:
+bccli run --title-mode prompt -m botconnector/<model> "Fix the failing tests"
+# Choose an exact title (highest precedence):
+bccli run --title "Fix failing tests" -m botconnector/<model> "Fix the failing tests"
+```
+
+Long, old tool outputs are now **pruned from later model context by default**,
+but their original content remains saved in session history; recently relevant
+outputs and skill tools are protected. To preserve the old unpruned behavior,
+put `{"compaction":{"prune":false}}` in your canonical BotConnector configuration.
+Compaction's other settings are unchanged.
+
+`bccli stats` now separates **known local cost** from **Gateway-billed
+requests whose actual cost is unavailable to the CLI**. It also reports the
+cache-read ratio. Use the BotConnector Workspace ledger for authoritative
+Gateway/PAYG billing and title-generation charges. This change does not reduce
+the number of tool definitions on full coding requests: automatically removing
+tools without a reliable way to re-enable them could silently break tasks.
