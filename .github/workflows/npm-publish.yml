@@ -9,13 +9,14 @@ on:
         default: "0.1.14-rc.1"
         type: string
       reuse_run_id:
-        description: "Optional successful npm-release-verify run ID from this exact commit"
-        required: false
+        description: "Required successful npm-release-verify run ID from this exact main commit"
+        required: true
         default: ""
         type: string
 
 permissions:
   contents: read
+  actions: read
   id-token: write
 
 concurrency:
@@ -49,14 +50,14 @@ jobs:
       - name: Enforce BotConnector self-audit release gate
         shell: bash
         run: node script/botconnector-release-audit.cjs
-      - name: Validate reused artifacts
-        if: ${{ inputs.reuse_run_id != '' }}
+      - name: Require release artifacts and all test gates from exact main commit
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           RUN_ID="${{ inputs.reuse_run_id }}"
+          test -n "$RUN_ID" || { echo "::error::Release requires a successful npm-release-verify run ID"; exit 1; }
           RUN_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}")
           OLD_SHA=$(printf '%s' "$RUN_JSON" | jq -r '.head_sha')
           RUN_NAME=$(printf '%s' "$RUN_JSON" | jq -r '.name')
@@ -68,7 +69,13 @@ jobs:
             COUNT=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq "[.artifacts[] | select(.name == \"$NAME\" and .expired == false)] | length")
             test "$COUNT" = "1"
           done
-          echo "Reuse run ${RUN_ID} verified: successful npm-release-verify for this exact commit and all npm artifacts are present."
+          TEST_RUNS=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/test.yml/runs?head_sha=${GITHUB_SHA}&per_page=100")
+          TEST_PASSED=$(printf '%s' "$TEST_RUNS" | jq --arg sha "$GITHUB_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .head_branch == "main" and .conclusion == "success")] | length')
+          if [ "$TEST_PASSED" -lt 1 ]; then
+            echo "::error::No successful complete test workflow exists for this exact main commit"
+            exit 1
+          fi
+          echo "Verified: current main commit passed full test and npm-release-verify workflows; all platform artifacts present."
 
   oidc-preflight:
     needs: preflight
