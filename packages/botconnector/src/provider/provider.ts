@@ -1586,6 +1586,7 @@ const layer = Layer.effect(
         }
 
         const envs = yield* env.all()
+        const auths = yield* auth.all().pipe(Effect.orDie)
 
         // BotConnector Gateway is server-authoritative. Never trust a packaged or
         // persisted model snapshot: replace it with the authenticated live catalog
@@ -1606,7 +1607,10 @@ const layer = Layer.effect(
         const localOnly = modelArg?.startsWith("ollama/") === true || providerArg === "ollama"
         if (!localOnly && botconnector && typeof botconnectorBaseURL === "string") {
           botconnector.models = {}
-          const apiKey = botconnector.env.map((item) => envs[item]).find(Boolean)
+          const savedAuth = auths[botconnectorID]
+          const apiKey =
+            botconnector.env.map((item) => envs[item]).find(Boolean) ??
+            (savedAuth?.type === "api" ? savedAuth.key : undefined)
           if (apiKey) {
             yield* Effect.promise(async () => {
               try {
@@ -1768,7 +1772,6 @@ const layer = Layer.effect(
         }
 
         // load apikeys
-        const auths = yield* auth.all().pipe(Effect.orDie)
         for (const [id, provider] of Object.entries(auths)) {
           const providerID = ProviderV2.ID.make(id)
           if (disabled.has(providerID)) continue
