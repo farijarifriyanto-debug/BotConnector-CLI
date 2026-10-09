@@ -94,6 +94,7 @@ server.listen(0, "127.0.0.1", async () => {
         "--format", "json", "E2E_REQUEST",
       ], {
         cwd: workdir,
+        timeout: 45_000,
         env: { ...process.env, BOTCONNECTOR_CONFIG: config, BOTCONNECTOR_API_KEY: key },
         stdio: ["ignore", "pipe", "pipe"],
       })
