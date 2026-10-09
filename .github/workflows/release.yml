@@ -10,9 +10,40 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+      - name: Require verified main commit and matching candidate version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          V="${{ inputs.version }}"
+          test "$(node -p "require('./npm-package/main/package.json').version")" = "$V"
+          for PATH_NAME in npm-package/platform-linux-x64/package.json npm-package/platform-win32-x64/package.json; do
+            test "$(node -p "require('./$PATH_NAME').version")" = "$V"
+          done
+          for WORKFLOW in test.yml npm-release-verify.yml; do
+            RUNS=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?head_sha=${GITHUB_SHA}&per_page=100")
+            PASS=$(printf '%s' "$RUNS" | jq --arg sha "$GITHUB_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .head_branch == "main" and .conclusion == "success")] | length')
+            if [ "$PASS" -lt 1 ]; then
+              echo "::error::No successful ${WORKFLOW} for the exact main commit"
+              exit 1
+            fi
+          done
+          node script/botconnector-release-audit.cjs
+
   build:
+    needs: preflight
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +54,7 @@ jobs:
             archive_ext: zip
           - os: ubuntu-latest
             asset_name: botconnector-linux-x64
-            bin_glob: "botconnector"
+            bin_glob: "bccli"
             archive_ext: tar.gz
     runs-on: ${{ matrix.os }}
     defaults:

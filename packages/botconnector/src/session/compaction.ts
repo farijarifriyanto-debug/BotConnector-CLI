@@ -272,7 +272,11 @@ const layer = Layer.effect(
     // calls, then erases output of older tool calls to free context space
     const prune = Effect.fn("SessionCompaction.prune")(function* (input: { sessionID: SessionID }) {
       const cfg = yield* config.get()
-      if (!cfg.compaction?.prune) return
+      // Keep all original tool outputs in session storage. Only omit old, very
+      // large outputs from subsequent model context; explicit prune:false is
+      // still respected. The 40k-token recent window and skill protection below
+      // remain unchanged.
+      if (cfg.compaction?.prune === false) return
       yield* Effect.logInfo("pruning")
 
       const msgs = yield* session

@@ -1,13 +1,16 @@
 name: npm-release-verify
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
     inputs:
       version:
         description: "npm version to verify"
         required: true
-        default: "0.1.0-beta.4"
+        default: "0.1.14-rc.1"
         type: string
 
 concurrency:
@@ -250,4 +253,5 @@ jobs:
           node ../script/botconnector-local-privacy-smoke.cjs
           node ../script/botconnector-cloud-catalog-smoke.cjs
           node ../script/botconnector-gateway-inference-smoke.cjs
+          node ../script/botconnector-tool-routing-smoke.cjs
           node ../script/botconnector-tool-permission-smoke.cjs

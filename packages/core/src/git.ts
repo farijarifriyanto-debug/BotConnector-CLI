@@ -276,7 +276,9 @@ const layer = Layer.effect(
       branch?: string
       depth?: number
     }) {
-      yield* operation("clone", AbsolutePath.make(path.dirname(input.directory)), [
+      const parent = AbsolutePath.make(path.dirname(input.directory))
+      yield* fs.ensureDir(parent).pipe(Effect.ignore)
+      yield* operation("clone", parent, [
         "clone",
         "--depth",
         String(input.depth ?? 100),

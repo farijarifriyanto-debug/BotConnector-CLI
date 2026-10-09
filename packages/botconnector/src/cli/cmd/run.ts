@@ -25,6 +25,7 @@ import { Filesystem } from "@/util/filesystem"
 import { createOpencodeClient, type OpencodeClient, type ToolPart } from "@opencode-ai/sdk/v2"
 import { FormatError, FormatUnknownError } from "../error"
 import { INTERACTIVE_INPUT_ERROR, resolveInteractiveStdin } from "./run/runtime.stdin"
+import { resolveSessionTitle, type TitleMode } from "./run/session-title"
 
 type ModelInput = Parameters<OpencodeClient["session"]["prompt"]>[0]["model"]
 
@@ -186,6 +187,12 @@ export const RunCommand = effectCmd({
       .option("title", {
         type: "string",
         describe: "title for the session (uses truncated prompt if no value provided)",
+      })
+      .option("title-mode", {
+        type: "string",
+        choices: ["auto", "ai", "prompt"] as const,
+        default: "auto",
+        describe: "auto: local title in one-shot CLI, AI in interactive mode; ai: always generate title using a model; prompt: local title",
       })
       .option("attach", {
         type: "string",
@@ -450,9 +457,13 @@ export const RunCommand = effectCmd({
           ]
 
       function title() {
-        if (args.title === undefined) return
-        if (args.title !== "") return args.title
-        return message.slice(0, 50) + (message.length > 50 ? "..." : "")
+        return resolveSessionTitle({
+          explicit: args.title,
+          message,
+          mode: args["title-mode"] as TitleMode,
+          interactive,
+          command: args.command,
+        })
       }
 
       async function session(sdk: OpencodeClient): Promise<SessionInfo | undefined> {
@@ -554,7 +565,7 @@ export const RunCommand = effectCmd({
         input: { agent: string | undefined; model: ModelInput | undefined; variant: string | undefined },
       ): Promise<SessionInfo> {
         const result = await sdk.session.create({
-          title: args.title !== undefined && args.title !== "" ? args.title : undefined,
+          title: title(),
           agent: input.agent,
           model: input.model
             ? {
@@ -1001,6 +1012,8 @@ export async function runMini(input: MiniCommandInput) {
     format: "default",
     file: undefined,
     title: undefined,
+    "title-mode": "auto",
+    titleMode: "auto",
     attach: input.attach,
     password: input.password,
     username: input.username,

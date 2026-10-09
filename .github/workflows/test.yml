@@ -59,6 +59,12 @@ jobs:
       - name: Enforce source, SDK and npm release contracts
         run: node script/botconnector-release-audit.cjs
 
+      - name: Verify token savings without disabling tools
+        working-directory: packages/botconnector
+        run: |
+          bun test test/cli/run/session-title.test.ts test/cli/stats-gateway-cost.test.ts test/session/llm/tool-routing.test.ts test/session/prompt-token-efficiency.test.ts
+          bun test test/session/compaction.test.ts --test-name-pattern 'compacts old completed tool output by default|does not prune when explicitly disabled|skips protected skill tool output'
+
       - name: Typecheck BotConnector CLI
         working-directory: packages/botconnector
         run: bun run typecheck
@@ -143,7 +149,11 @@ jobs:
       - name: Run HttpApi exerciser gates
         if: runner.os == 'Linux'
         working-directory: packages/botconnector
-        run: bun run test:httpapi
+        timeout-minutes: 15
+        run: |
+          bun run script/httpapi-exercise.ts --mode coverage --fail-on-missing --fail-on-skip --progress
+          bun run script/httpapi-exercise.ts --mode auth --fail-on-missing --fail-on-skip --progress
+          bun run script/httpapi-exercise.ts --mode effect --fail-on-missing --fail-on-skip --progress
 
   e2e:
     needs: quick
