@@ -253,4 +253,5 @@ jobs:
           node ../script/botconnector-local-privacy-smoke.cjs
           node ../script/botconnector-cloud-catalog-smoke.cjs
           node ../script/botconnector-gateway-inference-smoke.cjs
+          node ../script/botconnector-tool-routing-smoke.cjs
           node ../script/botconnector-tool-permission-smoke.cjs
