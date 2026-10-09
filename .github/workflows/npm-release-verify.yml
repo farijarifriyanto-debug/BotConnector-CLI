@@ -23,7 +23,9 @@ jobs:
       - name: Resolve committed package version
         id: package-version
         shell: bash
-        run: echo "value=$(node -p \"require('./npm-package/main/package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: |
+          V=$(node -p 'require("./npm-package/main/package.json").version')
+          echo "value=$V" >> "$GITHUB_OUTPUT"
       - name: Verify npm package versions
         shell: bash
         run: |
