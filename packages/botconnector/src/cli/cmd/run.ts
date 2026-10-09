@@ -330,7 +330,9 @@ export const RunCommand = effectCmd({
 
       const replay = args.replay === false ? false : args.replay || args["replay-limit"] !== undefined
 
-      const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
+      // The inherited PWD can refer to the parent process's directory when spawned with cwd.
+      // Using it here misclassifies project files as external and breaks permission checks.
+      const root = Filesystem.resolve(process.cwd())
       const directory = (() => {
         if (!args.dir) return args.attach ? undefined : root
         if (args.attach) return args.dir
