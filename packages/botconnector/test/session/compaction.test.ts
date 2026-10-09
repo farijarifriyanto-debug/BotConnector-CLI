@@ -710,6 +710,8 @@ describe("session.compaction.prune", () => {
           expect(part?.state.status).toBe("completed")
           if (part?.type === "tool" && part.state.status === "completed") {
             expect(part.state.time.compacted).toBeNumber()
+            // Pruning only changes future model context, not the recorded tool result.
+            expect(part.state.output).toHaveLength(200_000)
           }
         }),
 
