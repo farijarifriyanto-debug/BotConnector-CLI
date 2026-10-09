@@ -62,7 +62,7 @@ jobs:
       - name: Verify token savings without disabling tools
         working-directory: packages/botconnector
         run: |
-          bun test test/cli/run/session-title.test.ts test/cli/stats-gateway-cost.test.ts
+          bun test test/cli/run/session-title.test.ts test/cli/stats-gateway-cost.test.ts test/session/llm/tool-routing.test.ts test/session/prompt-token-efficiency.test.ts
           bun test test/session/compaction.test.ts --test-name-pattern 'compacts old completed tool output by default|does not prune when explicitly disabled|skips protected skill tool output'
 
       - name: Typecheck BotConnector CLI
