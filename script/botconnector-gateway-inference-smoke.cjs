@@ -12,6 +12,8 @@ const workdir = fs.mkdtempSync(path.join(os.tmpdir(), "bccli-gateway-e2e-"))
 const key = "bccli-gateway-smoke-only"
 let catalogRequests = 0
 let completionRequests = 0
+let primaryRequests = 0
+let titleRequests = 0
 let promptSeen = false
 let unauthorized = 0
 
@@ -44,7 +46,13 @@ const server = http.createServer((req, res) => {
       completionRequests += 1
       try {
         const request = JSON.parse(input)
-        promptSeen = request.model === "gateway-e2e-model" && JSON.stringify(request.messages).includes("E2E_REQUEST")
+        const system = JSON.stringify(request.messages?.find((message) => message.role === "system")?.content ?? "")
+        const isTitle = system.includes("title generator")
+        if (isTitle) titleRequests += 1
+        if (!isTitle && request.model === "gateway-e2e-model" && JSON.stringify(request.messages).includes("E2E_REQUEST")) {
+          promptSeen = true
+          primaryRequests += 1
+        }
       } catch {
         promptSeen = false
       }
@@ -107,7 +115,9 @@ server.listen(0, "127.0.0.1", async () => {
     })
     assert.equal(result.code, 0, "CLI failed: " + result.stderr.slice(0, 500))
     assert.ok(catalogRequests > 0, "CLI did not fetch authorized model catalog")
-    assert.equal(completionRequests, 1, "CLI must make exactly one test inference request")
+    assert.ok(completionRequests >= 1, "CLI made no Chat Completions requests")
+    assert.equal(primaryRequests, 1, "CLI must complete exactly one primary user inference")
+    assert.equal(completionRequests, primaryRequests + titleRequests, "unexpected extra model request not accounted for")
     assert.equal(unauthorized, 0, "CLI sent an unauthorized request")
     assert.ok(promptSeen, "model ID/prompt did not reach Chat Completions")
     const events = result.stdout.split("\n").filter(Boolean).map((line) => JSON.parse(line))
