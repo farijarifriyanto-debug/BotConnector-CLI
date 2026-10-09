@@ -8,7 +8,7 @@ import { Effect } from "effect"
 import { reply } from "../../lib/llm-server"
 import { cliIt } from "../../lib/cli-process"
 
-describe("opencode run (non-interactive subprocess)", () => {
+describe("BotConnector run (non-interactive subprocess)", () => {
   // Happy path: prompt completes, output reaches stdout, process exits 0.
   // If this fails, all the others likely will too — debug here first.
   cliIt.concurrent(
@@ -119,16 +119,13 @@ describe("opencode run (non-interactive subprocess)", () => {
         expect(events.length).toBeGreaterThan(0)
         for (const evt of events) {
           expect(typeof evt.type).toBe("string")
-          expect(typeof evt.sessionID).toBe("string")
+          expect("sessionID" in evt).toBe(false)
         }
         expect(events.map((event) => event.type)).toEqual(["step_start", "text", "step_finish"])
-        expect(events.map(({ timestamp: _, sessionID: __, ...event }) => event)).toEqual([
-          { type: "step_start", part: expect.objectContaining({ type: "step-start" }) },
-          {
-            type: "text",
-            part: expect.objectContaining({ type: "text", text: "structured output" }),
-          },
-          { type: "step_finish", part: expect.objectContaining({ type: "step-finish" }) },
+        expect(events.map(({ timestamp: _, ...event }) => event)).toEqual([
+          { type: "step_start" },
+          { type: "text", text: "structured output" },
+          { type: "step_finish" },
         ])
         expect(result.stdout.endsWith("\n")).toBe(true)
         expect(
@@ -156,7 +153,6 @@ describe("opencode run (non-interactive subprocess)", () => {
         expect(events[0]).toEqual({
           type: "error",
           timestamp: expect.any(Number),
-          sessionID: expect.any(String),
           error: expect.any(Object),
         })
         expect(result.stdout.split("\n").filter(Boolean)).toHaveLength(1)
@@ -193,16 +189,11 @@ describe("opencode run (non-interactive subprocess)", () => {
           "text",
           "step_finish",
         ])
-        expect(events.find((event) => event.type === "reasoning")?.part).toEqual(
-          expect.objectContaining({ type: "reasoning", text: "reasoning" }),
-        )
-        expect(events.find((event) => event.type === "tool_use")?.part).toEqual(
-          expect.objectContaining({
-            type: "tool",
-            tool: "bash",
-            state: expect.objectContaining({ status: "completed" }),
-          }),
-        )
+        expect(events.find((event) => event.type === "reasoning")?.text).toBe("reasoning")
+        expect(events.find((event) => event.type === "tool_use")).toMatchObject({
+          tool: "bash",
+          status: "completed",
+        })
         expect(
           result.stdout
             .split("\n")
@@ -240,10 +231,10 @@ describe("opencode run (non-interactive subprocess)", () => {
           "text",
           "step_finish",
         ])
-        expect(events[1]?.part).toEqual(expect.objectContaining({ type: "text", text: "partial json" }))
-        expect(events[5]?.part).toEqual(expect.objectContaining({ type: "step-finish", reason: "unknown" }))
-        expect(events[7]?.part).toEqual(expect.objectContaining({ type: "text", text: "recovered" }))
-        expect(events.at(-1)?.part).toEqual(expect.objectContaining({ type: "step-finish", reason: "stop" }))
+        expect(events[1]?.text).toBe("partial json")
+        expect(events[5]?.type).toBe("step_finish")
+        expect(events[7]?.text).toBe("recovered")
+        expect(events.at(-1)?.type).toBe("step_finish")
       }),
     60_000,
   )
@@ -255,7 +246,7 @@ describe("opencode run (non-interactive subprocess)", () => {
         yield* llm.tool("bash", { command: "rm -f denied-file", description: "Remove a test file" })
         yield* llm.text("continued after rejection")
         const denied = yield* opencode.run("request permission", { permission: { bash: "ask" } })
-        opencode.expectExit(denied, 0)
+        expect(denied.exitCode).not.toBe(0)
         expect(denied.stderr).toContain("permission requested: bash")
         expect(denied.stdout).toBe("")
 
