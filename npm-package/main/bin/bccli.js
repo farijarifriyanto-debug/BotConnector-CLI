@@ -132,7 +132,7 @@ function resolveBinary() {
     console.error(
       `bccli: could not find ${entry.pkg} in node_modules.\n` +
         `This usually means optional dependencies were skipped during install.\n` +
-        `Try: npm install bccli --include=optional`,
+        `Try: npm install -g @botconnector/bccli --include=optional`,
     )
     process.exit(1)
   }

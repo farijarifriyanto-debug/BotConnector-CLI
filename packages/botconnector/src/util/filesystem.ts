@@ -152,8 +152,12 @@ export function resolveFilePath(root: string, file: string): string {
 
 export function windowsPath(p: string): string {
   if (process.platform !== "win32") return p
+  const stripped = p
+    .replace(/^\\\\\?\\UNC\\/i, "\\\\")
+    .replace(/^(\\\\[?]\\|\/\/\?\/)/, "")
   return (
-    p
+    stripped
+      .replace(/^([a-zA-Z]):([\\/]|$)/, (_, drive, rest) => `${drive.toUpperCase()}:${rest}`)
       .replace(/^\/([a-zA-Z]):(?:[\\/]|$)/, (_, drive) => `${drive.toUpperCase()}:/`)
       // Git Bash for Windows paths are typically /<drive>/...
       .replace(/^\/([a-zA-Z])(?:\/|$)/, (_, drive) => `${drive.toUpperCase()}:/`)

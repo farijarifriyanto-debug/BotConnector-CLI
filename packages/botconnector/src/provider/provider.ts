@@ -1586,6 +1586,7 @@ const layer = Layer.effect(
         }
 
         const envs = yield* env.all()
+        const auths = yield* auth.all().pipe(Effect.orDie)
 
         // BotConnector Gateway is server-authoritative. Never trust a packaged or
         // persisted model snapshot: replace it with the authenticated live catalog
@@ -1606,7 +1607,10 @@ const layer = Layer.effect(
         const localOnly = modelArg?.startsWith("ollama/") === true || providerArg === "ollama"
         if (!localOnly && botconnector && typeof botconnectorBaseURL === "string") {
           botconnector.models = {}
-          const apiKey = botconnector.env.map((item) => envs[item]).find(Boolean)
+          const savedAuth = auths[botconnectorID]
+          const apiKey =
+            botconnector.env.map((item) => envs[item]).find(Boolean) ??
+            (savedAuth?.type === "api" ? savedAuth.key : undefined)
           if (apiKey) {
             yield* Effect.promise(async () => {
               try {
@@ -1646,6 +1650,25 @@ const layer = Layer.effect(
                         ? raw["max_tokens"]
                         : 8_192
 
+                  const features = isRecord(raw["capabilities"]) ? raw["capabilities"] : {}
+                  const inputFeatures = isRecord(features["input"]) ? features["input"] : {}
+                  const outputFeatures = isRecord(features["output"]) ? features["output"] : {}
+                  const inputModalities = Array.isArray(raw["input_modalities"]) ? raw["input_modalities"] : []
+                  const outputModalities = Array.isArray(raw["output_modalities"]) ? raw["output_modalities"] : []
+                  const hasFeature = (...values: unknown[]) => values.some((value) => value === true)
+                  const supportsTools =
+                    typeof features["toolcall"] === "boolean"
+                      ? features["toolcall"]
+                      : typeof raw["supports_tools"] === "boolean"
+                        ? raw["supports_tools"]
+                        : true
+                  const inputVision = hasFeature(
+                    inputFeatures["image"], features["vision"], raw["supports_vision"], raw["supports_images"],
+                  ) || inputModalities.includes("image")
+                  const inputPdf = hasFeature(inputFeatures["pdf"], features["pdf"], raw["supports_pdf"]) || inputModalities.includes("pdf")
+                  const inputAudio = hasFeature(inputFeatures["audio"], features["audio"], raw["supports_audio"]) || inputModalities.includes("audio")
+                  const inputVideo = hasFeature(inputFeatures["video"], features["video"], raw["supports_video"]) || inputModalities.includes("video")
+
                   discovered[modelID] = {
                     id: ModelV2.ID.make(modelID),
                     providerID: botconnectorID,
@@ -1654,17 +1677,24 @@ const layer = Layer.effect(
                     api: { id: modelID, url: botconnectorBaseURL, npm: "@ai-sdk/openai-compatible" },
                     status: "active",
                     headers: {},
-                    options: {},
+                    // The Gateway settles actual usage and billing; zero here is NOT a free-price claim.
+                    options: { botconnectorBilling: "gateway-authoritative", botconnectorPricingKnown: false },
                     cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
                     limit: { context: Math.max(1, context), output: Math.max(1, output) },
                     capabilities: {
                       temperature: true,
-                      reasoning: false,
-                      attachment: false,
-                      toolcall: true,
-                      input: { text: true, audio: false, image: false, video: false, pdf: false },
-                      output: { text: true, audio: false, image: false, video: false, pdf: false },
-                      interleaved: false,
+                      reasoning: hasFeature(features["reasoning"], raw["supports_reasoning"]),
+                      attachment: hasFeature(features["attachment"], raw["supports_attachments"]) || inputVision || inputPdf || inputAudio || inputVideo,
+                      toolcall: supportsTools,
+                      input: { text: true, audio: inputAudio, image: inputVision, video: inputVideo, pdf: inputPdf },
+                      output: {
+                        text: true,
+                        audio: hasFeature(outputFeatures["audio"], raw["supports_audio_output"]) || outputModalities.includes("audio"),
+                        image: hasFeature(outputFeatures["image"], raw["supports_image_output"]) || outputModalities.includes("image"),
+                        video: hasFeature(outputFeatures["video"], raw["supports_video_output"]) || outputModalities.includes("video"),
+                        pdf: hasFeature(outputFeatures["pdf"]) || outputModalities.includes("pdf"),
+                      },
+                      interleaved: hasFeature(features["interleaved"]),
                     },
                     release_date: "",
                     variants: {},
@@ -1742,7 +1772,6 @@ const layer = Layer.effect(
         }
 
         // load apikeys
-        const auths = yield* auth.all().pipe(Effect.orDie)
         for (const [id, provider] of Object.entries(auths)) {
           const providerID = ProviderV2.ID.make(id)
           if (disabled.has(providerID)) continue

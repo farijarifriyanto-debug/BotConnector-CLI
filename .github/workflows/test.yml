@@ -42,6 +42,23 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
+      - name: Capture resolved lockfile for dependency drift diagnosis
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: resolved-bun-lock
+          path: bun.lock
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Fail when dependency install mutates the committed lockfile
+        run: |
+          git diff --stat -- bun.lock
+          git diff -- bun.lock | head -120 || true
+          git diff --exit-code --quiet -- bun.lock
+
+      - name: Enforce source, SDK and npm release contracts
+        run: node script/botconnector-release-audit.cjs
+
       - name: Typecheck BotConnector CLI
         working-directory: packages/botconnector
         run: bun run typecheck
@@ -63,7 +80,6 @@ jobs:
           "$BIN" --version
 
   unit:
-    if: github.event_name != 'pull_request'
     needs: quick
     name: unit (${{ matrix.settings.name }})
     strategy:
@@ -130,7 +146,6 @@ jobs:
         run: bun run test:httpapi
 
   e2e:
-    if: github.event_name != 'pull_request'
     needs: quick
     name: e2e (${{ matrix.settings.name }})
     strategy:

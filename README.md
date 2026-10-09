@@ -6,7 +6,7 @@ BCCLI is the BotConnector command-line AI client for connecting cloud and local 
 
 ```bash
 npm install -g @botconnector/bccli
-botconnector --version
+bccli --version
 ```
 
 ## BotConnector Cloud
@@ -21,8 +21,8 @@ BotConnector does not resurrect stale packaged model IDs.
 
 ```bash
 export BOTCONNECTOR_API_KEY=...
-botconnector models botconnector
-botconnector run -m botconnector/<model> "Hello"
+bccli models botconnector
+bccli run -m botconnector/<model> "Hello"
 ```
 
 ## Local Ollama
@@ -31,8 +31,8 @@ BotConnector discovers Local Ollama only on loopback (`127.0.0.1` / `localhost`)
 Remote Ollama endpoints and model aliases ending in `:cloud` are not presented as Local.
 
 ```bash
-botconnector models ollama
-botconnector run -m ollama/<local-model> "Hello"
+bccli models ollama
+bccli run -m ollama/<local-model> "Hello"
 ```
 
 ## Canonical configuration
@@ -56,3 +56,27 @@ Recommended terminal font: **Cascadia Mono**. Font selection is controlled by th
 ## Source
 
 https://github.com/farijarifriyanto-debug/BotConnector-CLI
+
+## Compatibility and end-to-end validation
+
+Prebuilt npm packages currently support **Linux x64** and **Windows x64**. macOS,
+ARM, and other platforms require a separately verified build; the npm launcher
+should report unsupported platforms instead of appearing to install successfully.
+
+Run `bccli models botconnector` to confirm an authenticated Gateway catalog. A
+missing or rejected API key must produce an error, **not** an empty successful
+model list. For a real inference smoke test, select a model that is available
+on your account via `bccli models botconnector` and run:
+
+```bash
+bccli run -m botconnector/<available-model-id> "Reply E2E_OK"
+```
+
+Model discovery and inference are not proof of settlement. Validate the Gateway
+usage and billing ledgers separately with a dedicated test account before
+certifying PAYG or plan quota end-to-end. The Gateway, not placeholder CLI
+model cost metadata, is authoritative for charges.
+
+For local privacy tests, use `bccli models ollama`, and verify in a controlled
+network trace that local requests never contact the Cloud Gateway. Tests that
+only serve mock Ollama data are not a substitute for real local inference.

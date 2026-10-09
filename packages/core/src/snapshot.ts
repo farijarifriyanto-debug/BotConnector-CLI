@@ -92,13 +92,18 @@ const layer = Layer.effect(
     const global = yield* Global.Service
     const location = yield* Location.Service
     const source = yield* git.repo.discover(location.project.directory)
-    const worktree = source
-      ? AbsolutePath.make(yield* fs.realPath(source.worktree).pipe(Effect.orDie))
+    const rawWorktree = source
+      ? yield* fs.realPath(source.worktree).pipe(Effect.orDie)
       : location.project.directory
+    const worktree = AbsolutePath.make(FSUtil.normalizePath(rawWorktree))
     const gitDirectory = AbsolutePath.make(path.join(global.data, "snapshot", location.project.id, Hash.fast(worktree)))
 
     const scope = Effect.fnUntraced(function* () {
-      const relative = path.relative(worktree, location.directory)
+      const rawCanonical = yield* fs.realPath(location.directory).pipe(
+        Effect.catch(() => Effect.succeed(location.directory)),
+      )
+      const canonicalLocation = FSUtil.normalizePath(rawCanonical)
+      const relative = path.relative(worktree, canonicalLocation)
       if (relative.startsWith("..") || path.isAbsolute(relative))
         return yield* new Error({ operation: "capture", message: "Location is outside the project" })
       return RelativePath.make(relative.replaceAll("\\", "/") || ".")

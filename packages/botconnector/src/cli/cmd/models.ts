@@ -48,7 +48,15 @@ export const ModelsCommand = effectCmd({
 
     if (args.provider) {
       const providerID = ProviderV2.ID.make(args.provider)
-      if (!providers[providerID]) return yield* fail(`Provider not found: ${args.provider}`)
+      if (!providers[providerID]) {
+        if (args.provider === "botconnector") {
+          return yield* fail("BotConnector Cloud catalog is unavailable or empty. Check BOTCONNECTOR_API_KEY and Gateway connectivity.")
+        }
+        return yield* fail(`Provider not found: ${args.provider}`)
+      }
+      if (args.provider === "botconnector" && Object.keys(providers[providerID].models).length === 0) {
+        return yield* fail("BotConnector Cloud catalog is unavailable or empty. Check BOTCONNECTOR_API_KEY and Gateway connectivity.")
+      }
       print(providerID, args.verbose)
       return
     }

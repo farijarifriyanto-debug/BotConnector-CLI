@@ -188,17 +188,29 @@ const layer = Layer.effect(
       )
       if (!dotgit) return undefined
 
-      const cwd = path.dirname(dotgit)
+      const cwd = FSUtil.normalizePath(path.dirname(dotgit))
       const git = run(cwd, proc)
       const topLevel = yield* git(["rev-parse", "--show-toplevel"])
       const gitDir = yield* git(["rev-parse", "--git-dir"])
       const commonDir = yield* git(["rev-parse", "--git-common-dir"])
       if (gitDir.exitCode !== 0 || commonDir.exitCode !== 0) return undefined
 
+      const worktree = AbsolutePath.make(topLevel.exitCode === 0 ? resolvePath(cwd, topLevel.text) : cwd)
+      const gitDirectory = AbsolutePath.make(resolvePath(cwd, gitDir.text))
+      const trimmedCommon = commonDir.text.trim()
+      const trimmedGitDir = gitDir.text.trim()
+      const commonDirectory = AbsolutePath.make(
+        trimmedCommon === trimmedGitDir
+          ? gitDirectory
+          : path.isAbsolute(FSUtil.windowsPath(trimmedCommon))
+            ? resolvePath(cwd, trimmedCommon)
+            : resolvePath(gitDirectory, trimmedCommon),
+      )
+
       return new Repository({
-        worktree: AbsolutePath.make(topLevel.exitCode === 0 ? resolvePath(cwd, topLevel.text) : cwd),
-        gitDirectory: AbsolutePath.make(resolvePath(cwd, gitDir.text)),
-        commonDirectory: AbsolutePath.make(resolvePath(cwd, commonDir.text)),
+        worktree,
+        gitDirectory,
+        commonDirectory,
       })
     })
 
@@ -407,7 +419,7 @@ const layer = Layer.effect(
       yield* fs
         .writeFileString(
           path.join(input.gitDirectory, "objects", "info", "alternates"),
-          path.join(input.seed.commonDirectory, "objects") + "\n",
+          path.join(input.seed.commonDirectory, "objects").replaceAll("\\", "/") + "\n",
         )
         .pipe(
           Effect.mapError(
@@ -420,9 +432,27 @@ const layer = Layer.effect(
               }),
           ),
         )
-      yield* fs
-        .copyFile(path.join(input.seed.gitDirectory, "index"), path.join(input.gitDirectory, "index"))
-        .pipe(Effect.catch(() => Effect.void))
+      const seedIndex = path.join(input.seed.gitDirectory, "index")
+      if (yield* fs.existsSafe(seedIndex)) {
+        yield* fs.copyFile(seedIndex, path.join(input.gitDirectory, "index")).pipe(
+          Effect.mapError(
+            (cause) =>
+              new OperationError({
+                operation: "create",
+                directory: input.gitDirectory,
+                message: "Failed to copy Git index from seed repository",
+                cause,
+              }),
+          ),
+        )
+      } else {
+        const head = yield* run(input.seed.worktree, proc)(["rev-parse", "HEAD"]).pipe(
+          Effect.catch(() => Effect.succeed({ exitCode: 1, text: "", stderr: "" })),
+        )
+        if (head.exitCode === 0 && head.text.trim()) {
+          yield* repositoryOperation("create", repository, ["read-tree", head.text.trim()]).pipe(Effect.ignore)
+        }
+      }
       return repository
     })
 
@@ -791,10 +821,11 @@ const layer = Layer.effect(
       path: AbsolutePath
       changes: ChangeSet
     }) {
+      if (!input.changes.trim()) return
       const result = yield* proc
         .run(
           ChildProcess.make("git", ["apply", "-"], {
-            cwd: input.path,
+            cwd: input.repository.worktree,
             extendEnv: true,
             stdin: Stream.make(new TextEncoder().encode(input.changes)),
           }),
@@ -809,7 +840,7 @@ const layer = Layer.effect(
         operation: "apply",
         directory: input.path,
         message:
-          result.stderr.toString("utf8").trim() || result.stdout.toString("utf8").trim() || "Failed to apply changes",
+          result.stderr.toString("utf8").trim() || result.stdout.toString("utf8").trim() || "Git apply failed",
       })
     })
 
@@ -982,6 +1013,6 @@ function resolvePath(cwd: string, value: string) {
   const trimmed = value.replace(/[\r\n]+$/, "")
   if (!trimmed) return cwd
   const normalized = FSUtil.windowsPath(trimmed)
-  if (path.isAbsolute(normalized)) return path.normalize(normalized)
-  return path.resolve(cwd, normalized)
+  const resolved = path.isAbsolute(normalized) ? path.normalize(normalized) : path.resolve(cwd, normalized)
+  return FSUtil.normalizePath(resolved)
 }

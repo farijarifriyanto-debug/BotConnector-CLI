@@ -6,7 +6,16 @@ const fail = (message) => {
   process.exitCode = 1
 }
 
+const sdkBuild = read("packages/sdk/js/script/build.ts")
+if (sdkBuild.includes("../../opencode")) fail("SDK build still targets the removed packages/opencode")
+if (!sdkBuild.includes('path.resolve(dir, "../../botconnector")')) {
+  fail("SDK build is not rooted at the canonical BotConnector package")
+}
+
 const launcher = read("npm-package/main/bin/bccli.js")
+if (launcher.includes("Try: npm install bccli --include=optional")) {
+  fail("npm launcher still recommends the wrong recovery package")
+}
 for (const needle of [
   "env.BOTCONNECTOR_CONFIG = seededConfig",
   "delete env.OPENCODE_CONFIG",
@@ -349,7 +358,16 @@ function trackedPackageFiles(root = "packages") {
 }
 const trackedIdentityFiles = ["package.json", "bun.lock", ...trackedPackageFiles()]
 for (const path of trackedIdentityFiles) {
-  const body = read(path)
+  // Two vendored prebuilt client tarballs retain their original upstream package
+  // name in Bun's resolved alias. This is a fixed compatibility artifact, not
+  // an import or a private workspace namespace. Do not exempt other instances.
+  const body =
+    path === "bun.lock"
+      ? read(path).replaceAll(
+          /"@opencode-ai\/client@(?:\.\.\/app\/)?vendor\/opencode-ai-client-1\.17\.13-v2\.tgz"/g,
+          '"@botconnector/client@vendored-compatibility"',
+        )
+      : read(path)
   for (const name of privateNamespaces) {
     if (body.includes(`@opencode-ai/${name}`)) fail(`${path} still uses private upstream namespace @opencode-ai/${name}`)
   }
