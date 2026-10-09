@@ -9,9 +9,20 @@ import path from "path"
 
 import { createClient } from "@hey-api/openapi-ts"
 
-const opencode = path.resolve(dir, "../../opencode")
+const botconnector = path.resolve(dir, "../../botconnector")
 
-await $`bun dev generate > ${dir}/openapi.json`.cwd(opencode)
+await #!/usr/bin/env bun
+import { fileURLToPath } from "url"
+
+const dir = fileURLToPath(new URL("..", import.meta.url))
+process.chdir(dir)
+
+import { $ } from "bun"
+import path from "path"
+
+import { createClient } from "@hey-api/openapi-ts"
+
+bun dev generate > ${dir}/openapi.json`.cwd(botconnector)
 
 const document = (await Bun.file("./openapi.json").json()) as {
   components?: { schemas?: Record<string, unknown> }
