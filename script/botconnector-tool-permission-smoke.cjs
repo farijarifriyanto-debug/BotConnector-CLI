@@ -63,7 +63,9 @@ function execute(args) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [launcher, ...args], {
       cwd: dir, timeout: 45_000,
-      env: { ...process.env, BOTCONNECTOR_CONFIG: config, BOTCONNECTOR_API_KEY: token },
+      // Simulate a CI runner spawning the CLI into a different cwd while PWD is stale.
+      // The project root must still be the spawned process cwd, not this inherited value.
+      env: { ...process.env, PWD: path.dirname(dir), BOTCONNECTOR_CONFIG: config, BOTCONNECTOR_API_KEY: token },
       stdio: ["ignore", "pipe", "pipe"],
     })
     let stdout = ""
