@@ -47,6 +47,17 @@ jobs:
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['bccli-linux-x64']")" = "$V"
           test "$(node -p "require('./npm-package/main/package.json').optionalDependencies['bccli-win32-x64']")" = "$V"
           npm --version
+      - name: Refuse immutable npm version reuse
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="${{ inputs.version }}"
+          for PACKAGE in "@botconnector/bccli" "bccli-linux-x64" "bccli-win32-x64"; do
+            if npm view "${PACKAGE}@${V}" version >/dev/null 2>&1; then
+              echo "::error::${PACKAGE}@${V} already exists. npm versions are immutable; create a new release candidate instead."
+              exit 1
+            fi
+          done
       - name: Enforce BotConnector self-audit release gate
         shell: bash
         run: node script/botconnector-release-audit.cjs
