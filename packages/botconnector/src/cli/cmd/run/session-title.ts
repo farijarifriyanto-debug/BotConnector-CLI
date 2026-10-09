@@ -10,8 +10,8 @@ export function resolveSessionTitle(input: {
   command?: string
 }): string | undefined {
   if (input.explicit !== undefined && input.explicit !== "") return input.explicit
-  if (input.mode === "ai") return undefined
-  if (input.mode === "auto" && (input.interactive || input.command)) return undefined
+  if (input.mode === "ai" && input.explicit === undefined) return undefined
+  if (input.mode === "auto" && input.explicit === undefined && (input.interactive || input.command)) return undefined
 
   const cleaned = input.message
     .replace(/[\u0000-\u001f\u007f]/g, " ")
