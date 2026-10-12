@@ -199,6 +199,37 @@ describe("OpenAI-compatible Chat route", () => {
     }),
   )
 
+  it.effect("streams available reasoning_content before answer text", () =>
+    Effect.gen(function* () {
+      const response = yield* LLMClient.generate(request).pipe(
+        Effect.provide(
+          dynamicResponse((input) =>
+            Effect.succeed(
+              input.respond(
+                sseEvents(
+                  deltaChunk({ role: "assistant", reasoning_content: "Checking" }),
+                  deltaChunk({ reasoning_content: " sources" }),
+                  deltaChunk({ content: "Done" }),
+                  deltaChunk({}, "stop"),
+                ),
+                { headers: { "content-type": "text/event-stream" } },
+              ),
+            ),
+          ),
+        ),
+      )
+
+      expect(response.reasoning).toBe("Checking sources")
+      expect(response.text).toBe("Done")
+      expect(response.events.filter((event) => event.type.startsWith("reasoning"))).toEqual([
+        { type: "reasoning-start", id: "reasoning-0" },
+        { type: "reasoning-delta", id: "reasoning-0", text: "Checking" },
+        { type: "reasoning-delta", id: "reasoning-0", text: " sources" },
+        { type: "reasoning-end", id: "reasoning-0" },
+      ])
+    }),
+  )
+
   it.effect("posts to the configured compatible endpoint and parses text usage", () =>
     Effect.gen(function* () {
       const response = yield* LLMClient.generate(request).pipe(

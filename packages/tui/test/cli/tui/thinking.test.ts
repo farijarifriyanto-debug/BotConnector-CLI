@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import { reasoningSummary, splitEmbeddedThinking } from "../../../src/context/thinking"
+import {
+  isThinkingMode,
+  nextThinkingMode,
+  reasoningSummary,
+  splitEmbeddedThinking,
+} from "../../../src/context/thinking"
 
 describe("reasoningSummary", () => {
   test("extracts a leading summary title and leaves markdown body", () => {
@@ -61,5 +66,19 @@ describe("splitEmbeddedThinking", () => {
       answer: "Normal answer",
       closed: true,
     })
+  })
+})
+
+describe("thinking visibility", () => {
+  test("cycles predictably between collapsed and expanded", () => {
+    expect(nextThinkingMode("hide")).toBe("show")
+    expect(nextThinkingMode("show")).toBe("hide")
+  })
+
+  test("rejects invalid persisted modes rather than showing unknown data", () => {
+    expect(isThinkingMode("show")).toBe(true)
+    expect(isThinkingMode("hide")).toBe(true)
+    expect(isThinkingMode("minimal")).toBe(false)
+    expect(isThinkingMode(undefined)).toBe(false)
   })
 })
